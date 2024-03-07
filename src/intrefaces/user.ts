@@ -23,7 +23,7 @@ export interface Login {
 export interface JwtPayload {
     sub: string;
     iat?: number;
-    exp?: number;
+    exp: number;
     aud?: string;
     iss?: string;
 }

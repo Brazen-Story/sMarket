@@ -42,7 +42,7 @@ const passportVerify = new LocalStrategy(
 
 const jwtOptions = {
     jwtFromRequest: ExtractJwt.fromHeader("authorization"),
-    secretOrKey: config.accessKey,
+    secretOrKey: config.jwt.accessKey,
 };
 
 const JWTVerify = new JWTStrategy(jwtOptions, async (jwtPayload: JwtPayload, done: any) => {

@@ -1,11 +1,12 @@
 import { PrismaClient, User } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import HttpException from '../models/http-exception.model';
-import { Login, Register } from '../intrefaces/user';
+import { JwtPayload, Login, Register } from '../intrefaces/user';
 import brcypt from 'bcryptjs';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import config from '../config';
+import { redisCli } from '../config/redis/redis';
 
 const prisma = new PrismaClient();
 
@@ -64,53 +65,53 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     }
 }
 
-function IssuanceAccessToken(user: Login) {
+const IssuanceAccessToken = (user: Login) => {
     const timestamp = new Date().getTime();
     return jwt.sign({
         sub: user.email,
         iat: timestamp
-    }, config.accessKey, {
+    }, config.jwt.accessKey, {
         expiresIn: '60m',
     });
 }
 
-function IssuanceRefreshToken(user: Login) {
+const IssuanceRefreshToken = (user: Login) => {
     const timestamp = new Date().getTime();
     return jwt.sign({
         sub: user.email,
         iat: timestamp
-    }, config.refreshKey, {
+    }, config.jwt.refreshKey, {
         expiresIn: '24h',
     });
 }
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-    try{
+    try {
         const userInfo = await prisma.user.findUnique({
-        where: {
-            email: req.body.email,
-        },
-        select: {
-            id: true,
-            username: true,
-            phoneNumber: true,
-            address: true,
-        }
-    })
-    res.send({
-         access_Token: IssuanceAccessToken(req.body),
-         refresh_Token: IssuanceRefreshToken(req.body),
-         userInfo,
-     });
-    } catch(error) {
+            where: {
+                email: req.body.email,
+            },
+            select: {
+                id: true,
+                username: true,
+                phoneNumber: true,
+                address: true,
+            }
+        })
+        res.send({
+            access_Token: IssuanceAccessToken(req.body),
+            refresh_Token: IssuanceRefreshToken(req.body),
+            userInfo,
+        });
+    } catch (error) {
         console.log(error)
     }
 }
 
 export const renew = async (req: Request, res: Response): Promise<void> => {
-    try{
-        const token = req.cookies.refresh_Token;
-        const data = jwt.verify(token, config.refreshKey) as User;
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        const data = jwt.verify(refreshToken, config.jwt.refreshKey) as User;
 
         const user = await prisma.user.findUnique({
             where: {
@@ -118,19 +119,19 @@ export const renew = async (req: Request, res: Response): Promise<void> => {
             },
         });
 
-        if(user) {
+        const validity = redisCli.get(refreshToken);
+
+        if (user && !validity) {
             res.send({
                 access_Token: IssuanceAccessToken(user),
                 status: 'success'
             })
         }
 
-    } catch(error) {
+    } catch (error) {
         console.log(error)
     }
 }
-
-
 
 export const auth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -141,8 +142,23 @@ export const auth = async (req: Request, res: Response, next: NextFunction): Pro
     }
 }
 
-//참고사항 : https://stackoverflow.com/questions/21978658/invalidating-json-web-tokens
 export const logout = async (req: Request, res: Response): Promise<void> => {
-    
+    try {
+        console.log(req.cookies)
+        const refreshToken: string = req.cookies.refreshToken;
+        const data = jwt.verify(refreshToken, config.jwt.refreshKey) as JwtPayload;
+        console.log(data.exp)
+        if (data) {
+            const expTime = data.exp - Math.floor(Date.now() / 1000); // 만료 시간 계산
+            await redisCli.setEx(refreshToken, expTime, 'blacklisted'); // Redis에 토큰 저장
+            console.log('리프레시 토큰이 블랙리스트에 추가됨');
+        }
+
+        res.clearCookie('refreshToken').send('로그아웃 완료');
+
+
+    } catch (error) {
+        console.log(error);
+    }
 }
 
