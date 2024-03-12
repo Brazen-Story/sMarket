@@ -1,5 +1,6 @@
 import redis, { createClient } from 'redis';
 import config from '..';
+import Logger from '../../logger/logger';
 
 const redisClient = createClient({
     url: `redis://${config.redis.username}:${config.redis.password}@${config.redis.host}:${config.redis.port}/0`,
@@ -7,9 +8,9 @@ const redisClient = createClient({
 });
 
 redisClient.connect().then(() => {
-    console.log('Successfully connected to Redis');
+    Logger.info('Successfully connected to Redis');
 }).catch((err) => {
-    console.error('Redis connection error', err);
+    Logger.error('Redis connection error', err);
 });
 
 export const redisCli = redisClient.v4;
