@@ -1,6 +1,6 @@
 export interface User {
-    id: string;
-    username: string;
+    user_id: string;
+    name: string;
     phoneNumber: number;
     address: string;
     email: string;
@@ -8,7 +8,7 @@ export interface User {
 }
 
 export interface Register {
-    username: string;
+    name: string;
     phoneNumber: number;
     address: string;
     email: string;

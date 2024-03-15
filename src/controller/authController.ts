@@ -7,63 +7,32 @@ import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import config from '../config';
 import { redisCli } from '../config/redis/redis';
+import Logger from '../logger/logger';
 
 const prisma = new PrismaClient();
 
-const checkUserUniqueness = async (email: string, phoneNumber: number) => {
+const checkUserUniqueness = async (email: string, phone_number: number) => {
     const existingUserByEmail = await prisma.user.findUnique({
         where: {
             email,
         },
     });
 
-    const existingUserByPhoneNumber = await prisma.user.findUnique({
+    const existingUserByphone_number = await prisma.user.findUnique({
         where: {
-            phoneNumber,
+            phone_number,
         },
     });
 
-    if (existingUserByEmail || existingUserByPhoneNumber) {
+    if (existingUserByEmail || existingUserByphone_number) {
         throw new HttpException(422, {
             errors: {
                 ...(existingUserByEmail ? { email: ['이미 사용 중 입니다.'] } : {}),
-                ...(existingUserByPhoneNumber ? { phoneNumber: ['이미 사용 중 입니다.'] } : {}),
+                ...(existingUserByphone_number ? { phone_number: ['이미 사용 중 입니다.'] } : {}),
             },
         });
     }
 };
-
-export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            res.status(422).json({ errors: errors.array() });
-        }
-
-        const Register: Register = req.body.user;
-
-        await checkUserUniqueness(Register.email, Register.phoneNumber);
-
-        const hashedPassword = await brcypt.hash(Register.password, 10);
-
-        await prisma.user.create({
-            data: {
-                email: Register.email,
-                username: Register.username,
-                password: hashedPassword,
-                phoneNumber: Register.phoneNumber,
-                address: Register.address,
-            }
-        });
-
-        res.json({ status: 'success', message: '사용자 등록이 완료되었습니다.' })
-
-    } catch (error) {
-        next(error)
-    }
-}
 
 const IssuanceAccessToken = (user: Login) => {
     const timestamp = new Date().getTime();
@@ -85,6 +54,38 @@ const IssuanceRefreshToken = (user: Login) => {
     });
 }
 
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            res.status(422).json({ errors: errors.array() });
+        }
+
+        const Register: Register = req.body.user;
+
+        await checkUserUniqueness(Register.email, Register.phoneNumber);
+
+        const hashedPassword = await brcypt.hash(Register.password, 10);
+
+        await prisma.user.create({
+            data: {
+                email: Register.email,
+                name: Register.name,
+                password: hashedPassword,
+                phone_number: Register.phoneNumber,
+                address: Register.address,
+            }
+        });
+
+        res.json({ status: 'success', message: '사용자 등록이 완료되었습니다.' })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {
         const userInfo = await prisma.user.findUnique({
@@ -92,9 +93,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
                 email: req.body.email,
             },
             select: {
-                id: true,
-                username: true,
-                phoneNumber: true,
+                user_id: true,
+                name: true,
+                phone_number: true,
                 address: true,
             }
         })
@@ -119,9 +120,9 @@ export const renew = async (req: Request, res: Response): Promise<void> => {
             },
         });
 
-        const validity = redisCli.get(refreshToken);
+        const valuser_idity = redisCli.get(refreshToken);
 
-        if (user && !validity) {
+        if (user && !valuser_idity) {
             res.send({
                 access_Token: IssuanceAccessToken(user),
                 status: 'success'
@@ -144,10 +145,9 @@ export const auth = async (req: Request, res: Response, next: NextFunction): Pro
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
     try {
-        console.log(req.cookies)
         const refreshToken: string = req.cookies.refreshToken;
         const data = jwt.verify(refreshToken, config.jwt.refreshKey) as JwtPayload;
-        console.log(data.exp)
+
         if (data) {
             const expTime = data.exp - Math.floor(Date.now() / 1000); // 만료 시간 계산
             await redisCli.setEx(refreshToken, expTime, 'blacklisted'); // Redis에 토큰 저장
@@ -156,9 +156,8 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 
         res.clearCookie('refreshToken').send('로그아웃 완료');
 
-
     } catch (error) {
-        console.log(error);
+        console.error(error);
     }
 }
 

@@ -28,6 +28,10 @@ export default {
         password: process.env.REDIS_PASSWORD,
         host: process.env.REDIS_HOST,
         port: process.env.REDIS_PORT
+      },
+      naver: {
+        user: process.env.NAVER_USER,
+        pass: process.env.NAVER_PASSWORD
       }
 
 }
