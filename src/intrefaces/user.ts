@@ -25,5 +25,10 @@ export interface JwtPayload {
     iat?: number;
     exp: number;
     aud?: string;
-    iss?: string;
+    iss: string;
+}
+
+export interface JwtUserInfo {
+    user_id: string;
+    email: string;
 }

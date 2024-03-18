@@ -6,6 +6,7 @@ import http from 'http';
 import cookieParser from 'cookie-parser';
 import morganMiddleware from "./middleware/morgan";
 import logger from './logger/logger';
+import { userRoutes } from "./routes/userRoutes";
 
 const app: Express = express();
 
@@ -22,9 +23,9 @@ app.use((req, res, next) => {
 app.use(morganMiddleware);
 
 app.use('/auth', authRoutes);
+app.use('/user', userRoutes);
 
-const server = http.createServer(app)
-
+const server = http.createServer(app);
 
 server.listen(config.port, () => {
   logger.info(`[server]: Server is running at http://localhost:${config.port}`);

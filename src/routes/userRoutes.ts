@@ -1,12 +1,18 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { pwfind } from '../controller/userController';
-
-//업데이트, 조회 
+import { updatePw } from '../controller/userController';
+ 
 export const userRoutes: Router = Router();
 
-userRoutes.post('/pwfind',
+userRoutes.post('/update', 
     [
-        body('email').trim().notEmpty().isEmail().withMessage('이메일은 형식이 아닙니다.')
+        body("password").trim().notEmpty().withMessage('기존 비밀번호를 입력해주세요.'),
+        body("newPassword").trim().notEmpty().isLength({ min: 6, max: 20}).withMessage('새 비밀번호를 입력해주세요.'),
+        body('confirmPassword').custom((value, { req }) => {
+            if (value !== req.body.password) {
+              throw new Error('비밀번호가 일치하지 않습니다.');
+            }
+            return true;
+          }),
     ],
-    pwfind);
+    updatePw);

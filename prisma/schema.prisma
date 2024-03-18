@@ -14,10 +14,33 @@ datasource db {
 }
 
 model User {
-  user_id       String  @id @default(uuid())
-  name          String
-  phone_number  Int     @unique
-  address       String
-  email         String  @unique
-  password      String
+  user_id      String    @id @default(uuid())
+  name         String
+  phone_number Int       @unique
+  address      String
+  email        String    @unique
+  password     String
+  products     Product[]
+}
+
+model Product {
+  product_id        String          @id @default(uuid())
+  seller            User            @relation(fields: [seller_id], references: [user_id])
+  seller_id         String
+  description       String
+  registration_date DateTime        @default(now())
+  end_date          DateTime
+  start_price       Int
+  hammer_price      Int
+  status            String
+  images            Product_image[]
+}
+
+model Product_image {
+  image_id   String  @id @default(uuid())
+  image_1    String
+  image_2    String
+  image_3    String
+  product    Product @relation(fields: [product_id], references: [product_id])
+  product_id String
 }

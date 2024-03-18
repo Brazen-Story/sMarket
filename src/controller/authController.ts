@@ -1,30 +1,23 @@
 import { PrismaClient, User } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import HttpException from '../models/http-exception.model';
-import { JwtPayload, Login, Register } from '../intrefaces/user';
+import { JwtPayload, JwtUserInfo, Login, Register } from '../intrefaces/user';
 import brcypt from 'bcryptjs';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import config from '../config';
 import { redisCli } from '../config/redis/redis';
 import Logger from '../logger/logger';
+import { userByEmail, userByphoneNumber } from './userController';
 
 const prisma = new PrismaClient();
 
-const checkUserUniqueness = async (email: string, phone_number: number) => {
-    const existingUserByEmail = await prisma.user.findUnique({
-        where: {
-            email,
-        },
-    });
+const checkUserUniqueness = async (email: string, phonedNumber: number) => {
+    const existingUserByEmail = await userByEmail(email);
 
-    const existingUserByphone_number = await prisma.user.findUnique({
-        where: {
-            phone_number,
-        },
-    });
+    const existingUserByphone_number = await userByphoneNumber(phonedNumber);
 
-    if (existingUserByEmail || existingUserByphone_number) {
+    if (!existingUserByEmail || !existingUserByphone_number) {
         throw new HttpException(422, {
             errors: {
                 ...(existingUserByEmail ? { email: ['이미 사용 중 입니다.'] } : {}),
@@ -34,9 +27,10 @@ const checkUserUniqueness = async (email: string, phone_number: number) => {
     }
 };
 
-const IssuanceAccessToken = (user: Login) => {
+const IssuanceAccessToken = (user: JwtUserInfo) => {
     const timestamp = new Date().getTime();
     return jwt.sign({
+        iss: user.user_id,
         sub: user.email,
         iat: timestamp
     }, config.jwt.accessKey, {
@@ -44,9 +38,10 @@ const IssuanceAccessToken = (user: Login) => {
     });
 }
 
-const IssuanceRefreshToken = (user: Login) => {
+const IssuanceRefreshToken = (user: JwtUserInfo) => {
     const timestamp = new Date().getTime();
     return jwt.sign({
+        iss: user.user_id,
         sub: user.email,
         iat: timestamp
     }, config.jwt.refreshKey, {
@@ -56,7 +51,6 @@ const IssuanceRefreshToken = (user: Login) => {
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-
         const errors = validationResult(req);
 
         if (!errors.isEmpty()) {
@@ -82,11 +76,11 @@ export const register = async (req: Request, res: Response, next: NextFunction):
         res.json({ status: 'success', message: '사용자 등록이 완료되었습니다.' })
 
     } catch (error) {
-        next(error)
+        Logger.error(error)
     }
 }
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const userInfo = await prisma.user.findUnique({
             where: {
@@ -94,18 +88,20 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             },
             select: {
                 user_id: true,
-                name: true,
-                phone_number: true,
-                address: true,
+                email: true,
             }
         })
-        res.send({
-            access_Token: IssuanceAccessToken(req.body),
-            refresh_Token: IssuanceRefreshToken(req.body),
-            userInfo,
-        });
+
+        if(userInfo){
+            res.send({
+                access_Token: IssuanceAccessToken(userInfo),
+                refresh_Token: IssuanceRefreshToken(userInfo),
+                userInfo,
+            });
+        }
+
     } catch (error) {
-        console.log(error)
+        Logger.error(error);
     }
 }
 

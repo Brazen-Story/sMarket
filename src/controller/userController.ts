@@ -1,57 +1,76 @@
-import { validationResult } from "express-validator";
 import Logger from "../logger/logger"
 import { NextFunction, Request, Response } from 'express';
-import { smtpTransport } from "../config/email/email";
 import config from "../config";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-const generateRandomNumber = (min: number, max: number) => {
-    const randNum = Math.floor(Math.random() * (max - min + 1)) + min;
-    return randNum;
+export const userByEmail = async (email: string) => {
+    await prisma.user.findUnique({
+        where: {
+            email,
+        },
+    });
+
+    return email;
 }
 
-//
-export const pwfind = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const userByphoneNumber = async (phonedNumber: number) => {
+    await prisma.user.findUnique({
+        where: {
+            phone_number: phonedNumber,
+        },
+    });
+
+    return phonedNumber;
+}
+
+export const updatePw = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
     try {
-        const errors = validationResult(req);
+        const oldPassword: string = req.body.password;
+        const newPassword: string = req.body.newPassword;
+        const accessToken: string = req.cookies.accessToken;
 
-        if (!errors.isEmpty()) {
-            res.status(422).json({ errors: errors.array() });
-        }
+        const decoded = jwt.verify(accessToken, config.jwt.accessKey) as JwtPayload;
 
-        const number = generateRandomNumber(111111, 999999);
-
-        const email = await prisma.user.findUnique({
+        const findPw = await prisma.user.findUnique({
             where: {
-                email: req.body.email,
+                email: decoded.sub
             },
+            select: {
+                password: true,
+            }
         });
 
-        if(email){
-            const mailOptions = {
-                from: config.naver.user,
-                to: email,
-                subject: " 인증 관련 메일 입니다. ",
-                html: '<h1>인증번호를 입력해주세요 \n\n\n\n\n\n</h1>' + number
-            }
-
-            smtpTransport.sendMail(mailOptions, (err, response) => {
-                if (err) {
-                    res.json({ ok: false, msg: ' 메일 전송에 실패하였습니다. ' })
-                    smtpTransport.close()
-                    return
-                } else {
-                    res.json({ ok: true, msg: ' 메일 전송에 성공하였습니다. ', authNum: number })
-                    smtpTransport.close()
-                    return
-    
-                }
-            })
+        if (!findPw) {
+            res.json({ err: "인증 에러.." })
+            return;
         }
 
+        const compareResult = await bcrypt.compare(oldPassword, findPw.password);
+
+        if (!compareResult) {
+            res.json({ err: "비밀번호가 틀렸습니다.." })
+            return;
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await prisma.user.update({
+            where: {
+                email: decoded.sub
+            },
+            data: {
+                password: hashedPassword,
+            },
+        })
+
+        res.json({ status: 'success', message: '비밀번호가 업데이트되었습니다.' })
+
     } catch (error) {
-        Logger.error(error)
+        Logger.error(error);
     }
 }
