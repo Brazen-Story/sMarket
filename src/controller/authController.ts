@@ -130,14 +130,6 @@ export const renew = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
-export const auth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        res.json({ result: true });
-    } catch (error) {
-        console.error(error);
-        next(error);
-    }
-}
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -157,3 +149,11 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
+export const auth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        res.json({ result: true });
+    } catch (error) {
+        console.error(error);
+        next(error);
+    }
+}

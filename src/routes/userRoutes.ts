@@ -16,3 +16,4 @@ userRoutes.post('/update',
           }),
     ],
     updatePw);
+//회원 탈퇴.

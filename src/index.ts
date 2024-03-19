@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import morganMiddleware from "./middleware/morgan";
 import logger from './logger/logger';
 import { userRoutes } from "./routes/userRoutes";
+import { productRoutes } from "./routes/productRoutes";
 
 const app: Express = express();
 
@@ -24,6 +25,7 @@ app.use(morganMiddleware);
 
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
+app.use('/product', productRoutes);
 
 const server = http.createServer(app);
 

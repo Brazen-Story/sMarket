@@ -46,7 +46,6 @@ const jwtOptions = {
 };
 
 const JWTVerify = new JWTStrategy(jwtOptions, async (jwtPayload: JwtPayload, done: any) => {
-    
     try {
         const user = await prisma.user.findUnique({ where: { email: jwtPayload.sub }, });
         if (!user) {
