@@ -1,9 +1,19 @@
-export interface ProductRequest {
+export interface createProduct {
     seller_id: string;
     title: string;
     description: string;
-    endDate: string; // Consider using a more appropriate date type
+    endDate: string;
     startPrice: number;
+    status: ProductStatus;
+    images: ImageUrls;
+}
+
+export interface updateProduct{
+    title: string;
+    description: string;
+    endDate: string;
+    startPrice: number;
+    reservePrice: number;
     status: ProductStatus;
     images: ImageUrls;
 }
