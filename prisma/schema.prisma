@@ -24,6 +24,19 @@ model User {
   bid          Bid[]
 }
 
+model User_Profile{
+
+  
+}
+
+model User_Profile_Image{
+  image_id   String  @id @default(uuid())
+  profile_image String?
+  background_image String?
+
+
+}
+
 model Product {
   product_id        String          @id @default(uuid())
   seller            User            @relation(fields: [seller_id], references: [user_id])
@@ -58,3 +71,5 @@ model Bid {
   bidPrice   Int
   bidTime    DateTime @default(now())
 }
+
+//enum product status

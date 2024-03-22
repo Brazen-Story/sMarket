@@ -18,6 +18,21 @@ export interface updateProduct{
     images: ImageUrls;
 }
 
+export interface queryProduct{
+    page: number;
+    limit : number;
+    status: string;
+    sort: string;
+    searchName: string;
+}
+
+export interface PaginationResult {
+    totalPage?: number;
+    paginateData?: any[
+
+    ]; // 실제 데이터 타입으로 대체하세요.
+    // 여기에 더 많은 프로퍼티를 추가할 수 있습니다.
+  }
 interface ImageUrls {
     image_1: string;
     image_2?: string;

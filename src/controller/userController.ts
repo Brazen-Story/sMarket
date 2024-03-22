@@ -27,7 +27,7 @@ export const userByphoneNumber = async (phonedNumber: number) => {
     return phonedNumber;
 }
 
-export const updatePw = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const updatePw = async (req: Request, res: Response, next: NextFunction) => {
 
     try {
         const oldPassword: string = req.body.password;
@@ -74,3 +74,5 @@ export const updatePw = async (req: Request, res: Response, next: NextFunction):
         Logger.error(error);
     }
 }
+
+//프로필사진, 배경사진, 소개, 이름, 주소 보여줄 수 있게

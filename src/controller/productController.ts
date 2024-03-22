@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import Logger from '../logger/logger';
-import { createProduct, updateProduct } from '../intrefaces/product';
-import { buyer } from '../intrefaces/pay';
+import { PaginationResult, createProduct, queryProduct, updateProduct } from '../intrefaces/product';
 
 const prisma = new PrismaClient();
 
@@ -18,7 +17,7 @@ const parseDate = (dateStr: string) => {
 }
 
 //상품 등록
-export const savePrdct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const savePrdct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const productData: createProduct = req.body;
         const userId: string = req.params.id;
@@ -43,7 +42,7 @@ export const savePrdct = async (req: Request, res: Response, next: NextFunction)
             }
         });
 
-        res.send({ message: "등록 성공" })
+        return res.send({ message: "등록 성공" })
 
     } catch (error) {
         Logger.error(error);
@@ -51,7 +50,7 @@ export const savePrdct = async (req: Request, res: Response, next: NextFunction)
 }
 
 //특정 상품 조회
-export const findPrdct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const findPrdct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const productId: string = req.params.id
 
@@ -84,8 +83,9 @@ export const findPrdct = async (req: Request, res: Response, next: NextFunction)
     }
 }
 
-//내 상품 모두 조회
-export const myPrdct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//페이징처리
+//유저 상품 모두 조회
+export const myPrdct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId: string = req.params.id;
 
@@ -114,15 +114,83 @@ export const myPrdct = async (req: Request, res: Response, next: NextFunction): 
             }
         })
 
-        res.json({ message: "success", myProduct });
+        return res.json({ message: "success", myProduct });
 
     } catch (error) {
         Logger.error(error)
     }
 }
 
+//페이징 매김 
+export const pagination = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const queryParams: queryProduct = {
+            page: parseInt(req.query.page as string, 10) || 1,
+            limit: parseInt(req.query.limit as string, 10) || 15,
+            status: (req.query.status as string) || 'active',
+            sort: (req.query.sort as string) || 'latest',
+            searchName: decodeURIComponent((req.query.searchName as string) || ''),
+        };
+
+        const startIndex = (queryParams.page - 1) * queryParams.limit;
+        const totalCount = await prisma.product.count();
+        const totalPage = Math.ceil(totalCount / queryParams.limit);
+        const result = {} as PaginationResult;
+
+        let orderBy: Prisma.ProductOrderByWithRelationInput;
+        switch (queryParams.sort) {
+            case 'latest':
+                orderBy = {
+                    registration_date: 'desc',
+                };
+                break;
+            case 'lowPrice':
+                orderBy = {
+                    start_price: 'asc',
+                };
+                break;
+            case 'highPrice':
+                orderBy = {
+                    start_price: 'desc',
+                };
+                break;
+            default:
+                orderBy = {
+                    registration_date: 'desc',
+                };
+        }
+
+        if (queryParams.page < 0) {
+            return res.send({ message: "page는 1 이상이어야합니다." })
+        } else{
+            result.totalPage = totalPage;
+            result.paginateData = await prisma.product.findMany({
+                take: queryParams.limit,
+                skip: startIndex,
+                where: {
+                    title: {
+                        contains: queryParams.searchName,
+                    },
+                    status: queryParams.status,
+                },
+                orderBy: orderBy,
+                include: {
+                    images: {
+                        select: {
+                            image_1: true,
+                        }
+                    }
+                }
+            });
+        }
+        return res.send({ data: result });
+    } catch (error) {
+        Logger.error(error);
+    }
+}
+
 //수정
-export const updatePrdct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const updatePrdct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const productId: string = req.params.id;
         const productData: updateProduct = req.body;
@@ -141,7 +209,7 @@ export const updatePrdct = async (req: Request, res: Response, next: NextFunctio
             }
         });
 
-        if(image) {
+        if (image) {
             await prisma.product.update({
                 where: {
                     product_id: productId,
@@ -168,7 +236,7 @@ export const updatePrdct = async (req: Request, res: Response, next: NextFunctio
             })
         }
 
-        res.json({ message: "success" })
+        return res.json({ message: "success" })
 
     } catch (error) {
         Logger.error(error)
@@ -176,62 +244,19 @@ export const updatePrdct = async (req: Request, res: Response, next: NextFunctio
 }
 
 //상품 삭제
-export const deletePrcdt = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try{
+export const deletePrcdt = async (req: Request, res: Response, next: NextFunction) => {
+    try {
         const productId: string = req.params.id;
 
         await prisma.product.deleteMany({
             where: {
-                product_id: productId, 
+                product_id: productId,
             },
         });
 
-        res.json({ message: "success "});
+        res.json({ message: "success " });
 
-    }catch(error){
+    } catch (error) {
         Logger.error(error)
     }
 }
-
-//가격 변동(판매 중), pay로 별도 구분
-export const priceRise =  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const productId: string = req.params.id;
-    const buyer: buyer = req.body;
-
-    const product = await prisma.product.findUnique({
-        where: {
-            product_id: productId,
-        }
-    })
-
-    if(product && new Date() > product.registration_date) {
-        res.send({ message: "경매가 이미 종료되었습니다." });
-    }
-
-    if (product && (buyer.price < (product.start_price + (product.reserve_price || 0)))) {
-        res.send({ message: "입찰 가격이 낮습니다." })
-    }
-
-    const bid = await prisma.bid.create({
-        data: {
-          user_id: buyer.userId,
-          product_id: productId,
-          bidPrice: buyer.price,
-          bidTime: new Date(),
-        },
-      });
-
-    await prisma.product.update({
-        where: {
-            product_id: productId
-        },
-        data: {
-            reserve_price: buyer.price,
-        }
-    })
-
-    res.json({ message: "성공적으로 입찰되었습니다." })
-}
-
-
-// 낙찰, 구매자와 판매자 연결

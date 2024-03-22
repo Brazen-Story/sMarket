@@ -49,7 +49,7 @@ const IssuanceRefreshToken = (user: JwtUserInfo) => {
     });
 }
 
-export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const register = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const errors = validationResult(req);
 
@@ -80,7 +80,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     }
 }
 
-export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userInfo = await prisma.user.findUnique({
             where: {
@@ -105,7 +105,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     }
 }
 
-export const renew = async (req: Request, res: Response): Promise<void> => {
+export const renew = async (req: Request, res: Response) => {
     try {
         const refreshToken = req.cookies.refreshToken;
         const data = jwt.verify(refreshToken, config.jwt.refreshKey) as User;
@@ -131,7 +131,7 @@ export const renew = async (req: Request, res: Response): Promise<void> => {
 }
 
 
-export const logout = async (req: Request, res: Response): Promise<void> => {
+export const logout = async (req: Request, res: Response) => {
     try {
         const refreshToken: string = req.cookies.refreshToken;
         const data = jwt.verify(refreshToken, config.jwt.refreshKey) as JwtPayload;
@@ -149,7 +149,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
-export const auth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const auth = async (req: Request, res: Response, next: NextFunction) => {
     try {
         res.json({ result: true });
     } catch (error) {
