@@ -32,3 +32,15 @@ export interface JwtUserInfo {
     user_id: string;
     email: string;
 }
+
+export interface UserUpdate {
+    name?: string;
+    biography?: string;
+    address?: string;
+    images: ImageData;
+}
+
+interface ImageData {
+    profileImage?: string;
+    backgroundImage?: string;
+}

@@ -1,9 +1,10 @@
 import Logger from "../logger/logger"
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import config from "../config";
 import { PrismaClient, User } from "@prisma/client";
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
+import { UserUpdate } from "../intrefaces/user";
 
 const prisma = new PrismaClient();
 
@@ -27,7 +28,7 @@ export const userByphoneNumber = async (phonedNumber: number) => {
     return phonedNumber;
 }
 
-export const updatePw = async (req: Request, res: Response, next: NextFunction) => {
+export const updatePw = async (req: Request, res: Response) => {
 
     try {
         const oldPassword: string = req.body.password;
@@ -75,4 +76,92 @@ export const updatePw = async (req: Request, res: Response, next: NextFunction) 
     }
 }
 
-//프로필사진, 배경사진, 소개, 이름, 주소 보여줄 수 있게
+export const profile = async (req: Request, res: Response) => {
+    try {
+        const userId: string = req.params.id;
+
+        const profileData = await prisma.user.findUnique({
+            where: {
+                user_id: userId,
+            },
+            select: {
+                name: true,
+                biography: true,
+                address: true,
+                images: {
+                    select: {
+                        profile_image: true,
+                        background_image: true,
+                    }
+                }
+            }
+        });
+
+        res.json({ status: 'success', profileData });
+
+    } catch (error) {
+        Logger.error(error);
+    }
+}
+
+export const updateProfile = async (req: Request, res: Response) => {
+    try {
+        const userId: string = req.params.id;
+        const updateData: UserUpdate = req.body;
+
+        const image = await prisma.user_image.findFirst({
+            where: {
+                user_id: userId,
+            },
+            select: {
+                image_id: true,
+            }
+        });
+
+        if (image) {
+            await prisma.user.update({
+                where: {
+                    user_id: userId,
+                },
+                data: {
+                    name: updateData.name,
+                    address: updateData.address,
+                    biography: updateData.biography,
+                    images: {
+                        update: {
+                            where: {
+                                image_id: image.image_id
+                            },
+                            data: {
+                                profile_image: updateData.images.profileImage || null,
+                                background_image: updateData.images.backgroundImage || null,
+                            }
+                        }
+                    }
+                }
+            })
+        }
+
+        return res.json({ message: "success" })
+
+    } catch (error) {
+        Logger.error(error);
+    }
+}
+
+export const deleteUser = async (req: Request, res: Response) => {
+    try {
+        const userId: string = req.params.id;
+        
+        await prisma.user.deleteMany({
+            where: {
+                user_id: userId,
+            },
+        });
+
+        res.json({ message: "success " });
+
+    } catch (error) {
+        Logger.error(error);
+    }
+}

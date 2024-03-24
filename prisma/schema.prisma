@@ -14,27 +14,24 @@ datasource db {
 }
 
 model User {
-  user_id      String    @id @default(uuid())
+  user_id      String       @id @default(uuid())
   name         String
-  phone_number Int       @unique
+  phone_number Int          @unique
   address      String
-  email        String    @unique
+  email        String       @unique
   password     String
+  biography    String?
+  images       User_image[]
   products     Product[]
   bid          Bid[]
 }
 
-model User_Profile{
-
-  
-}
-
-model User_Profile_Image{
-  image_id   String  @id @default(uuid())
-  profile_image String?
+model User_image {
+  image_id         String  @id @default(uuid())
+  profile_image    String?
   background_image String?
-
-
+  User        User   @relation(fields: [user_id], references: [user_id])
+  user_id String
 }
 
 model Product {
@@ -48,7 +45,7 @@ model Product {
   start_price       Int
   reserve_price     Int?
   hammer_price      Int?
-  status            String
+  status            Status @default(auctionProgress)
   images            Product_image[]
   bid               Bid[]
 }
@@ -63,13 +60,16 @@ model Product_image {
 }
 
 model Bid {
-  bid_id  String  @id @default(uuid())
-  user    User    @relation(fields: [user_id], references: [user_id])
-  user_id String
-  product Product @relation(fields: [product_id], references: [product_id])
+  bid_id     String   @id @default(uuid())
+  user       User     @relation(fields: [user_id], references: [user_id])
+  user_id    String
+  product    Product  @relation(fields: [product_id], references: [product_id])
   product_id String
   bidPrice   Int
   bidTime    DateTime @default(now())
 }
 
-//enum product status
+enum Status {
+  auctionProgress
+  auctionCompleted
+}

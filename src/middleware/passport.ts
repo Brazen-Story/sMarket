@@ -5,6 +5,7 @@ import { ExtractJwt, Strategy as JWTStrategy } from 'passport-jwt';
 import * as bcrypt from 'bcrypt';
 import config from '../config';
 import { JwtPayload } from '../intrefaces/user';
+import Logger from '../logger/logger';
 
 const prisma = new PrismaClient();
 
@@ -34,7 +35,7 @@ const passportVerify = new LocalStrategy(
             return;
 
         } catch (error) {
-            console.error(error);
+            Logger.error(error);
             done(error);
         }
     }
@@ -56,7 +57,7 @@ const JWTVerify = new JWTStrategy(jwtOptions, async (jwtPayload: JwtPayload, don
         return;
         
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         done(error);
     }
 });

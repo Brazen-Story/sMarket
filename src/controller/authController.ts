@@ -9,6 +9,7 @@ import config from '../config';
 import { redisCli } from '../config/redis/redis';
 import Logger from '../logger/logger';
 import { userByEmail, userByphoneNumber } from './userController';
+import { userInfo } from 'os';
 
 const prisma = new PrismaClient();
 
@@ -82,21 +83,27 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userInfo = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
             where: {
                 email: req.body.email,
             },
             select: {
                 user_id: true,
                 email: true,
+                address: true,
+                name: true,
+                phone_number: true,
             }
         })
 
-        if(userInfo){
+        if(user){
+            const { user_id, email, ...userData } = user;
+            const { address, name, phone_number, ...userInfo} = user; 
+
             res.send({
                 access_Token: IssuanceAccessToken(userInfo),
                 refresh_Token: IssuanceRefreshToken(userInfo),
-                userInfo,
+                userData,
             });
         }
 

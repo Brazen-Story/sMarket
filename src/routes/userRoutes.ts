@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { updatePw } from '../controller/userController';
+import passport from '../middleware/passport';
+import { profile, updatePw, updateProfile, deleteUser } from '../controller/userController';
+
+const requireAuth = passport.authenticate("jwt", { session: false });
  
 export const userRoutes: Router = Router();
 
@@ -15,5 +18,9 @@ userRoutes.post('/update',
             return true;
           }),
     ],
+    requireAuth,
     updatePw);
-//회원 탈퇴.
+
+userRoutes.get('/profile', requireAuth, profile); //?
+userRoutes.patch('/profile/:id', requireAuth, updateProfile); //?
+userRoutes.delete('/:id', requireAuth, deleteUser); //?

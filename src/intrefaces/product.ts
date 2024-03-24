@@ -5,35 +5,48 @@ export interface createProduct {
     endDate: string;
     startPrice: number;
     status: ProductStatus;
-    images: ImageUrls;
+    images: ImageData;
 }
 
-export interface updateProduct{
+export interface updateProduct {
     title: string;
     description: string;
     endDate: string;
     startPrice: number;
     reservePrice: number;
     status: ProductStatus;
-    images: ImageUrls;
+    images: ImageData;
 }
 
-export interface queryProduct{
+export interface pagination {
+    userId?: string;
     page: number;
-    limit : number;
-    status: string;
-    sort: string;
-    searchName: string;
+    limit: number;
+    status?: string; //전체, 판매중, 팔림
+    sort: string; //최신, 고가, 저가
+    searchName?: string;
 }
 
 export interface PaginationResult {
-    totalPage?: number;
-    paginateData?: any[
+    totalPage: number;
+    paginateData: ProductData[];
+}
 
-    ]; // 실제 데이터 타입으로 대체하세요.
-    // 여기에 더 많은 프로퍼티를 추가할 수 있습니다.
-  }
-interface ImageUrls {
+interface ProductData {
+    product_id: string;
+    seller_id: string;
+    title: string;
+    description: string;
+    registration_date: string;
+    end_date: string;
+    start_price: number;
+    reserve_price: number | null;
+    hammer_price: number | null;
+    status: string;
+    images: ImageData[];
+}
+
+interface ImageData {
     image_1: string;
     image_2?: string;
     image_3?: string;

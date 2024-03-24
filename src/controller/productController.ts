@@ -1,7 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import Logger from '../logger/logger';
-import { PaginationResult, createProduct, queryProduct, updateProduct } from '../intrefaces/product';
+import { PaginationResult, createProduct, pagination, updateProduct } from '../intrefaces/product';
 
 const prisma = new PrismaClient();
 
@@ -17,7 +17,7 @@ const parseDate = (dateStr: string) => {
 }
 
 //상품 등록
-export const savePrdct = async (req: Request, res: Response, next: NextFunction) => {
+export const savePrdct = async (req: Request, res: Response) => {
     try {
         const productData: createProduct = req.body;
         const userId: string = req.params.id;
@@ -42,7 +42,7 @@ export const savePrdct = async (req: Request, res: Response, next: NextFunction)
             }
         });
 
-        return res.send({ message: "등록 성공" })
+        return res.status(200).json({ message: "등록 성공" })
 
     } catch (error) {
         Logger.error(error);
@@ -50,7 +50,7 @@ export const savePrdct = async (req: Request, res: Response, next: NextFunction)
 }
 
 //특정 상품 조회
-export const findPrdct = async (req: Request, res: Response, next: NextFunction) => {
+export const findPrdct = async (req: Request, res: Response) => {
     try {
         const productId: string = req.params.id
 
@@ -83,106 +83,91 @@ export const findPrdct = async (req: Request, res: Response, next: NextFunction)
     }
 }
 
-//페이징처리
-//유저 상품 모두 조회
-export const myPrdct = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const userId: string = req.params.id;
+//정렬처리
+const getPaginationAndOrderOptions = (page: number, limit: number, sort: string, status?: string, userId?: string, searchName?: string) => {
+    const startIndex = (page - 1) * limit;
 
-        const myProduct = await prisma.user.findUnique({
-            where: {
-                user_id: userId
+    let orderBy: Prisma.ProductOrderByWithRelationInput;
+    switch (sort) {
+        case 'latest':
+            orderBy = { registration_date: 'desc' };
+            break;
+        case 'lowPrice':
+            orderBy = { start_price: 'asc' };
+            break;
+        case 'highPrice':
+            orderBy = { start_price: 'desc' };
+            break;
+        default:
+            orderBy = { registration_date: 'desc' };
+    }
+
+    const where: Prisma.ProductWhereInput = {
+        ...(status && { status }),
+        ...(userId && { seller_id: userId }),
+        ...(searchName && { title: { contains: searchName } }),
+    };
+
+    return { take: limit, skip: startIndex, orderBy, where };
+}
+
+//상품 조회 및 페이징 정보 계산
+const fetchProducts = async (page: number, limit: number, sort: string, status?: string, userId?: string, searchName?: string) => {
+    const options = getPaginationAndOrderOptions(page, limit, sort, status, userId, searchName);
+
+    const totalCount = await prisma.product.count({
+        where: options.where,
+    });
+    const totalPage = Math.ceil(totalCount / limit);
+    const products = await prisma.product.findMany({
+        ...options,
+        include: {
+            images: {
+                select: {
+                    image_1: true,
+                },
             },
-            select: {
-                products: {
-                    select: {
-                        title: true,
-                        description: true,
-                        registration_date: true,
-                        end_date: true,
-                        start_price: true,
-                        reserve_price: true,
-                        hammer_price: true,
-                        status: true,
-                        images: {
-                            select: {
-                                image_1: true,
-                            }
-                        }
-                    }
-                }
-            }
-        })
+        },
+    });
 
-        return res.json({ message: "success", myProduct });
+    return {
+        totalPage,
+        paginateData: products,
+    };
+}
 
+//마이페이지
+export const myPrdct = async (req: Request, res: Response) => {
+    try {
+        const myPrdct: pagination = {
+            userId: req.params.id as string,
+            page: parseInt(req.query.page as string, 10) || 1,
+            limit: parseInt(req.query.limit as string, 10) || 15,
+            status: req.query.status as string,
+            sort: (req.query.sort as string) || 'latest',
+        };
+
+        const result = await fetchProducts(myPrdct.page, myPrdct.limit, myPrdct.sort, myPrdct.status, myPrdct.userId);
+
+        return res.send({ data: result });
     } catch (error) {
-        Logger.error(error)
+        Logger.error(error);
     }
 }
 
-//페이징 매김 
-export const pagination = async (req: Request, res: Response, next: NextFunction) => {
+//메인페이지
+export const mainPrdct = async (req: Request, res: Response) => {
     try {
-        const queryParams: queryProduct = {
+        const queryParams: pagination = {
             page: parseInt(req.query.page as string, 10) || 1,
             limit: parseInt(req.query.limit as string, 10) || 15,
-            status: (req.query.status as string) || 'active',
+            status: req.query.status as string,
             sort: (req.query.sort as string) || 'latest',
             searchName: decodeURIComponent((req.query.searchName as string) || ''),
         };
 
-        const startIndex = (queryParams.page - 1) * queryParams.limit;
-        const totalCount = await prisma.product.count();
-        const totalPage = Math.ceil(totalCount / queryParams.limit);
-        const result = {} as PaginationResult;
+        const result = await fetchProducts(queryParams.page, queryParams.limit, queryParams.sort, queryParams.status, undefined, queryParams.searchName);
 
-        let orderBy: Prisma.ProductOrderByWithRelationInput;
-        switch (queryParams.sort) {
-            case 'latest':
-                orderBy = {
-                    registration_date: 'desc',
-                };
-                break;
-            case 'lowPrice':
-                orderBy = {
-                    start_price: 'asc',
-                };
-                break;
-            case 'highPrice':
-                orderBy = {
-                    start_price: 'desc',
-                };
-                break;
-            default:
-                orderBy = {
-                    registration_date: 'desc',
-                };
-        }
-
-        if (queryParams.page < 0) {
-            return res.send({ message: "page는 1 이상이어야합니다." })
-        } else{
-            result.totalPage = totalPage;
-            result.paginateData = await prisma.product.findMany({
-                take: queryParams.limit,
-                skip: startIndex,
-                where: {
-                    title: {
-                        contains: queryParams.searchName,
-                    },
-                    status: queryParams.status,
-                },
-                orderBy: orderBy,
-                include: {
-                    images: {
-                        select: {
-                            image_1: true,
-                        }
-                    }
-                }
-            });
-        }
         return res.send({ data: result });
     } catch (error) {
         Logger.error(error);
@@ -190,7 +175,7 @@ export const pagination = async (req: Request, res: Response, next: NextFunction
 }
 
 //수정
-export const updatePrdct = async (req: Request, res: Response, next: NextFunction) => {
+export const updatePrdct = async (req: Request, res: Response) => {
     try {
         const productId: string = req.params.id;
         const productData: updateProduct = req.body;
@@ -244,7 +229,7 @@ export const updatePrdct = async (req: Request, res: Response, next: NextFunctio
 }
 
 //상품 삭제
-export const deletePrcdt = async (req: Request, res: Response, next: NextFunction) => {
+export const deletePrcdt = async (req: Request, res: Response) => {
     try {
         const productId: string = req.params.id;
 
