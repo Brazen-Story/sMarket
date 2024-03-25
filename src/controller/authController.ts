@@ -9,7 +9,6 @@ import config from '../config';
 import { redisCli } from '../config/redis/redis';
 import Logger from '../logger/logger';
 import { userByEmail, userByphoneNumber } from './userController';
-import { userInfo } from 'os';
 
 const prisma = new PrismaClient();
 

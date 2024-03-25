@@ -14,24 +14,25 @@ datasource db {
 }
 
 model User {
-  user_id      String       @id @default(uuid())
-  name         String
-  phone_number Int          @unique
-  address      String
-  email        String       @unique
-  password     String
-  biography    String?
-  images       User_image[]
-  products     Product[]
-  bid          Bid[]
+  user_id       String         @id @default(uuid())
+  name          String
+  phone_number  Int            @unique
+  address       String
+  email         String         @unique
+  password      String
+  biography     String?
+  images        User_image[]
+  products      Product[]
+  bid           Bid[]
+  likedProducts Product_liked[]
 }
 
 model User_image {
   image_id         String  @id @default(uuid())
   profile_image    String?
   background_image String?
-  User        User   @relation(fields: [user_id], references: [user_id])
-  user_id String
+  User             User    @relation(fields: [user_id], references: [user_id])
+  user_id          String
 }
 
 model Product {
@@ -45,9 +46,10 @@ model Product {
   start_price       Int
   reserve_price     Int?
   hammer_price      Int?
-  status            Status @default(auctionProgress)
+  status            Status          @default(auctionProgress)
   images            Product_image[]
   bid               Bid[]
+  likes             Product_liked[]
 }
 
 model Product_image {
@@ -59,6 +61,16 @@ model Product_image {
   product_id String
 }
 
+model Product_liked {
+  id         String   @id @default(uuid())
+  product    Product  @relation(fields: [product_id], references: [product_id])
+  product_id String
+  user       User     @relation(fields: [user_id], references: [user_id])
+  user_id    String
+  liked_date DateTime @default(now())
+}
+
+//입찰내역?
 model Bid {
   bid_id     String   @id @default(uuid())
   user       User     @relation(fields: [user_id], references: [user_id])
@@ -70,6 +82,7 @@ model Bid {
 }
 
 enum Status {
+  all
   auctionProgress
   auctionCompleted
 }

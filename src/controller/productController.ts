@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, Status } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import Logger from '../logger/logger';
 import { PaginationResult, createProduct, pagination, updateProduct } from '../intrefaces/product';
@@ -52,7 +52,7 @@ export const savePrdct = async (req: Request, res: Response) => {
 //특정 상품 조회
 export const findPrdct = async (req: Request, res: Response) => {
     try {
-        const productId: string = req.params.id
+        const productId: string = req.params.id;
 
         const product = await prisma.product.findUnique({
             where: {
@@ -72,11 +72,22 @@ export const findPrdct = async (req: Request, res: Response) => {
                     select: {
                         name: true,
                     }
-                }
+                },
             }
         });
 
-        res.json({ message: "success", product })
+        const likeCount = await prisma.product_liked.count({
+            where: {
+                product_id: productId,
+            },
+        });
+
+        if (product) {        
+            return res.status(200).json({
+                ...product,
+                likeCount,
+            });
+        }
 
     } catch (error) {
         Logger.error(error);
@@ -102,11 +113,16 @@ const getPaginationAndOrderOptions = (page: number, limit: number, sort: string,
             orderBy = { registration_date: 'desc' };
     }
 
-    const where: Prisma.ProductWhereInput = {
-        ...(status && { status }),
-        ...(userId && { seller_id: userId }),
-        ...(searchName && { title: { contains: searchName } }),
-    };
+    let where: Prisma.ProductWhereInput = {};
+    if (status && status !== 'all') {
+        where.status = status as Status;
+    }
+    if (userId) {
+        where.seller_id = userId;
+    }
+    if (searchName) {
+        where.title = { contains: searchName };
+    }
 
     return { take: limit, skip: startIndex, orderBy, where };
 }
@@ -127,6 +143,11 @@ const fetchProducts = async (page: number, limit: number, sort: string, status?:
                     image_1: true,
                 },
             },
+            _count: {
+                select: {
+                    likes: true,
+                },
+            }
         },
     });
 
@@ -245,3 +266,39 @@ export const deletePrcdt = async (req: Request, res: Response) => {
         Logger.error(error)
     }
 }
+
+//좋아요
+export const addLikeToProduct = async (req: Request, res: Response) => {
+    try {
+        const userId: string = req.params.id;
+        const productId: string = req.body.id;
+
+        await prisma.product_liked.create({
+            data:{
+                user_id: userId,
+                product_id: productId,
+            },
+        });
+
+        res.json({ message: "성공" })
+    } catch (error) {
+        Logger.error(error);
+    }
+};
+
+//좋아요 취소
+export const removeLikeFromProduct = async (req: Request, res: Response) => {
+    try {
+        const likeId: string = req.params.id;
+
+        await prisma.product_liked.delete({
+            where: {
+                id: likeId,
+            },
+        });
+
+        res.json({ message: "성공" })
+    } catch (error) {
+        Logger.error(error);
+    }
+};

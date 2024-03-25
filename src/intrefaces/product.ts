@@ -31,6 +31,11 @@ export interface PaginationResult {
     totalPage: number;
     paginateData: ProductData[];
 }
+export interface likePage {
+    userId: string;
+    page: number;
+    limit: number;
+}
 
 interface ProductData {
     product_id: string;
@@ -52,4 +57,4 @@ interface ImageData {
     image_3?: string;
 }
 
-type ProductStatus = "경매 중" | "숨기기" | "경매완료";
+type ProductStatus = "auctionProgress" | "auctionCompleted";

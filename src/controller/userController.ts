@@ -5,6 +5,7 @@ import { PrismaClient, User } from "@prisma/client";
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 import { UserUpdate } from "../intrefaces/user";
+import { likePage } from "../intrefaces/product";
 
 const prisma = new PrismaClient();
 
@@ -33,13 +34,11 @@ export const updatePw = async (req: Request, res: Response) => {
     try {
         const oldPassword: string = req.body.password;
         const newPassword: string = req.body.newPassword;
-        const accessToken: string = req.cookies.accessToken;
-
-        const decoded = jwt.verify(accessToken, config.jwt.accessKey) as JwtPayload;
+        const userId: string = req.params.id;
 
         const findPw = await prisma.user.findUnique({
             where: {
-                email: decoded.sub
+                user_id: userId,
             },
             select: {
                 password: true,
@@ -62,7 +61,7 @@ export const updatePw = async (req: Request, res: Response) => {
 
         await prisma.user.update({
             where: {
-                email: decoded.sub
+                user_id: userId,
             },
             data: {
                 password: hashedPassword,
@@ -152,7 +151,7 @@ export const updateProfile = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
     try {
         const userId: string = req.params.id;
-        
+
         await prisma.user.deleteMany({
             where: {
                 user_id: userId,
@@ -160,6 +159,46 @@ export const deleteUser = async (req: Request, res: Response) => {
         });
 
         res.json({ message: "success " });
+
+    } catch (error) {
+        Logger.error(error);
+    }
+}
+
+export const likeProduct = async (req: Request, res: Response) => {
+    try {
+        const likePage: likePage = {
+            userId: req.params.id as string,
+            page: parseInt(req.query.page as string, 10) || 1,
+            limit: parseInt(req.query.limit as string, 10) || 15,
+        }
+        const startIndex: number = (likePage.page - 1) * likePage.limit;
+
+        const totalCount = await prisma.product_liked.count({
+            where: {
+                user_id: likePage.userId,
+            },
+        });
+
+        const totalPage = Math.ceil(totalCount / likePage.limit);
+
+
+        const likedProducts = await prisma.product_liked.findMany({
+            where: {
+                user_id: likePage.userId,
+            },
+            skip: startIndex,
+            take: likePage.limit,
+            include: {
+                product: true
+            },
+        });
+
+        res.status(200).json({
+            totalPages: totalPage,
+            currentPage: likePage.page,
+            likedProducts: likedProducts,
+        });
 
     } catch (error) {
         Logger.error(error);
