@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import passport from '../middleware/passport';
-import { deletePrcdt, findPrdct, myPrdct, mainPrdct, savePrdct, updatePrdct, addLikeToProduct, removeLikeFromProduct } from '../controller/productController';
+import { deletePrcdt, findPrdct, myPrdct, savePrdct, mainPrdct, updatePrdct, addLikeToProduct, removeLikeFromProduct } from '../controller/productController';
 
 const requireAuth = passport.authenticate("jwt", { session: false });
 

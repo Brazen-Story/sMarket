@@ -14,13 +14,15 @@ datasource db {
 }
 
 model User {
-  user_id       String         @id @default(uuid())
+  user_id       String          @id @default(uuid())
   name          String
-  phone_number  Int            @unique
+  phone_number  Int             @unique
   address       String
-  email         String         @unique
+  email         String          @unique
   password      String
   biography     String?
+  buyerReviews  Review[]        @relation("BuyerReviews")
+  sellerReviews Review[]        @relation("SellerReviews")
   images        User_image[]
   products      Product[]
   bid           Bid[]
@@ -35,6 +37,16 @@ model User_image {
   user_id          String
 }
 
+model Category {
+  category_id String     @id @default(uuid())
+  name        String
+  parent_id   String?    @map("parent_id")
+  depth       Int
+  parent      Category?  @relation("CategoryToCategory", fields: [parent_id], references: [category_id])
+  children    Category[] @relation("CategoryToCategory")
+  products    Product[]
+}
+
 model Product {
   product_id        String          @id @default(uuid())
   seller            User            @relation(fields: [seller_id], references: [user_id])
@@ -46,6 +58,8 @@ model Product {
   start_price       Int
   reserve_price     Int?
   hammer_price      Int?
+  category          Category        @relation(fields: [category_id], references: [category_id])
+  category_id       String
   status            Status          @default(auctionProgress)
   images            Product_image[]
   bid               Bid[]
@@ -68,6 +82,16 @@ model Product_liked {
   user       User     @relation(fields: [user_id], references: [user_id])
   user_id    String
   liked_date DateTime @default(now())
+}
+
+model Review {
+  review_id          String               @id @default(uuid())
+  coment             String
+  buyerId            String
+  sellerId           String
+  buyer              User                 @relation("BuyerReviews", fields: [buyerId], references: [user_id])
+  seller             User                 @relation("SellerReviews", fields: [sellerId], references: [user_id])
+  reviewTime  DateTime  @default(now())
 }
 
 //입찰내역?

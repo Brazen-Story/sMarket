@@ -6,6 +6,7 @@ export interface createProduct {
     startPrice: number;
     status: ProductStatus;
     images: ImageData;
+    categoryId: string;
 }
 
 export interface updateProduct {
@@ -57,4 +58,4 @@ interface ImageData {
     image_3?: string;
 }
 
-type ProductStatus = "auctionProgress" | "auctionCompleted";
+type ProductStatus = "auctionProgress" | "auctionCompleted" | "all";

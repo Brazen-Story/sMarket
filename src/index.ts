@@ -8,6 +8,8 @@ import morganMiddleware from "./middleware/morgan";
 import logger from './logger/logger';
 import { userRoutes } from "./routes/userRoutes";
 import { productRoutes } from "./routes/productRoutes";
+import { categoryRoutes } from "./routes/categoryRoutes";
+import { revievwRoutes } from "./routes/reviewRoutes";
 
 const app: Express = express();
 
@@ -26,6 +28,8 @@ app.use(morganMiddleware);
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/product', productRoutes);
+app.use('/categories', categoryRoutes);
+app.use('/product-review', revievwRoutes);
 
 const server = http.createServer(app);
 

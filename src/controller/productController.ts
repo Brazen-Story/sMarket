@@ -16,12 +16,28 @@ const parseDate = (dateStr: string) => {
     return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
 }
 
+async function isLeafCategory(categoryId: string) {
+    const childrenCount = await prisma.category.count({
+      where: {
+        parent_id: categoryId,
+      },
+    });
+    
+    return childrenCount === 0;
+  }
+
+  
 //상품 등록
 export const savePrdct = async (req: Request, res: Response) => {
     try {
         const productData: createProduct = req.body;
         const userId: string = req.params.id;
 
+        const isLeaf = await isLeafCategory(productData.categoryId);
+        if (!isLeaf) {
+            return res.status(400).json({ message: "선택한 카테고리는 최하위 카테고리가 아닙니다." });
+        }
+        
         await prisma.product.create({
             data: {
                 seller: {
@@ -32,6 +48,9 @@ export const savePrdct = async (req: Request, res: Response) => {
                 end_date: parseDate(productData.endDate),
                 start_price: productData.startPrice,
                 status: productData.status,
+                category: {
+                    connect: { category_id: productData.categoryId }
+                },
                 images: {
                     create: [{
                         image_1: productData.images.image_1,
