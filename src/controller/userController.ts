@@ -33,8 +33,8 @@ export const updatePw = async (req: Request, res: Response) => {
 
     try {
         const oldPassword: string = req.body.password;
-        const newPassword: string = req.body.newPassword;
-        const userId: string = req.params.id;
+        const newPassword: string = req.body.updateData.password;
+        const userId: string = (req.user as User).user_id;
 
         const findPw = await prisma.user.findUnique({
             where: {
@@ -68,7 +68,7 @@ export const updatePw = async (req: Request, res: Response) => {
             },
         })
 
-        res.json({ status: 'success', message: '비밀번호가 업데이트되었습니다.' })
+        res.status(200).json({ code: 'success', message: '' })
 
     } catch (error) {
         Logger.error(error);
@@ -77,9 +77,9 @@ export const updatePw = async (req: Request, res: Response) => {
 
 export const profile = async (req: Request, res: Response) => {
     try {
-        const userId: string = req.params.id;
+        const userId: string = (req.user as User).user_id;
 
-        const profileData = await prisma.user.findUnique({
+        const data = await prisma.user.findUnique({
             where: {
                 user_id: userId,
             },
@@ -96,7 +96,7 @@ export const profile = async (req: Request, res: Response) => {
             }
         });
 
-        res.json({ status: 'success', profileData });
+        res.status(200).json({ code: 'success', message: " ", data});
 
     } catch (error) {
         Logger.error(error);
@@ -105,7 +105,7 @@ export const profile = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: Request, res: Response) => {
     try {
-        const userId: string = req.params.id;
+        const userId: string = (req.user as User).user_id;
         const updateData: UserUpdate = req.body;
 
         const image = await prisma.user_image.findFirst({
@@ -118,7 +118,7 @@ export const updateProfile = async (req: Request, res: Response) => {
         });
 
         if (image) {
-            await prisma.user.update({
+             await prisma.user.update({
                 where: {
                     user_id: userId,
                 },
@@ -132,16 +132,16 @@ export const updateProfile = async (req: Request, res: Response) => {
                                 image_id: image.image_id
                             },
                             data: {
-                                profile_image: updateData.images.profileImage || null,
-                                background_image: updateData.images.backgroundImage || null,
+                                profile_image: updateData.images?.profileImage ?? null,
+                                background_image: updateData.images?.backgroundImage ?? null,
                             }
                         }
                     }
                 }
             })
         }
+        return res.status(200).json({ code: "success" , message: ""})
 
-        return res.json({ message: "success" })
 
     } catch (error) {
         Logger.error(error);
@@ -150,7 +150,7 @@ export const updateProfile = async (req: Request, res: Response) => {
 
 export const deleteUser = async (req: Request, res: Response) => {
     try {
-        const userId: string = req.params.id;
+        const userId: string = (req.user as User).user_id;
 
         await prisma.user.deleteMany({
             where: {
@@ -158,7 +158,7 @@ export const deleteUser = async (req: Request, res: Response) => {
             },
         });
 
-        res.json({ message: "success " });
+        res.status(200).json({ code: 'success', message: " "});
 
     } catch (error) {
         Logger.error(error);
@@ -168,7 +168,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 export const likeProduct = async (req: Request, res: Response) => {
     try {
         const likePage: likePage = {
-            userId: req.params.id as string,
+            userId: (req.user as User).user_id,
             page: parseInt(req.query.page as string, 10) || 1,
             limit: parseInt(req.query.limit as string, 10) || 15,
         }
@@ -187,6 +187,9 @@ export const likeProduct = async (req: Request, res: Response) => {
             where: {
                 user_id: likePage.userId,
             },
+            orderBy: {
+                liked_date: 'asc',
+            },
             skip: startIndex,
             take: likePage.limit,
             include: {
@@ -194,10 +197,16 @@ export const likeProduct = async (req: Request, res: Response) => {
             },
         });
 
-        res.status(200).json({
-            totalPages: totalPage,
+        const data = {
+            totalPage: totalPage,
             currentPage: likePage.page,
             likedProducts: likedProducts,
+        }
+
+        res.status(200).json({
+            code: "success",
+            message: "",
+            data
         });
 
     } catch (error) {

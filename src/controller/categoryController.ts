@@ -5,7 +5,6 @@ import { Category } from "../intrefaces/category";
 
 const prisma = new PrismaClient();
 
-
 export const findCategory = async (req: Request, res: Response) => {
     try {
         const depth: number = parseInt(req.params.id, 10);
@@ -24,7 +23,8 @@ export const findCategory = async (req: Request, res: Response) => {
 
 
             res.send({
-                message: "success",
+                code: "success",
+                message: "",
                 data
             });
         }
@@ -62,7 +62,8 @@ export const allCategory = async (req: Request, res: Response) => {
         });
 
         res.send({
-            message: "success",
+            code: "success",
+            message: "",
             data
         });
 

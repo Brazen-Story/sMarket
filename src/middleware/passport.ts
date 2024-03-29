@@ -6,7 +6,6 @@ import * as bcrypt from 'bcrypt';
 import config from '../config';
 import { JwtPayload } from '../intrefaces/user';
 import Logger from '../logger/logger';
-
 const prisma = new PrismaClient();
 
 const localOptions = { usernameField: 'email', passwordField: 'password' };
@@ -42,7 +41,7 @@ const passportVerify = new LocalStrategy(
 )
 
 const jwtOptions = {
-    jwtFromRequest: ExtractJwt.fromHeader("authorization"),
+    jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('Bearer'),
     secretOrKey: config.jwt.accessKey,
 };
 

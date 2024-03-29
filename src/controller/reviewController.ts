@@ -1,34 +1,32 @@
 import { Request, Response } from "express";
 import Logger from "../logger/logger";
 import { createReview } from "../intrefaces/review";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
-//id로 리뷰조회
-//리뷰 등록
-//리뷰 삭제
 
 //등록
 export const saveReview = async (req: Request, res: Response) => {
     try {
-        const reviewData: createReview = req.body;
+        const sellerId: string = req.params.id;
+        const coment: string = req.body.conment
+        const buyer: string = (req.user as User).user_id;
 
         await prisma.review.create({
             data: {
-                coment: reviewData.coment,
-                sellerId: reviewData.seller,
-                buyerId: reviewData.buyer,
+                coment: coment,
+                sellerId: sellerId,
+                buyerId: buyer,
             }
         });
-        return res.status(200).json({ message: "등록 성공" })
+        return res.status(200).json({ code: "success", message: "" })
 
     } catch (error) {
         Logger.error(error);
     }
 }
 
-//조회
+//조회(상품리뷰가 아닌 유저에 대한 리뷰다.)
 export const findReview = async (req: Request, res: Response) => {
     try {
         const sellerId: string = req.params.id;
@@ -39,10 +37,20 @@ export const findReview = async (req: Request, res: Response) => {
             },
             orderBy: {
                 reviewTime: 'asc',
+            },
+            select: {
+                buyer: {
+                    select: {
+                        name: true,
+                    }
+                },
+                review_id: true,
+                coment: true,
+                reviewTime: true,
             }
         })
 
-        res.status(200).json({ data });
+        return res.status(200).json({ code: "success", message: "", data })
     } catch (error) {
         Logger.error(error);
     }
@@ -51,19 +59,21 @@ export const findReview = async (req: Request, res: Response) => {
 //삭제
 export const deleteReview = async (req: Request, res: Response) => {
     try {
-        const reviewId: string = req.body.reviewId;
-        const buyerId: string = req.body.buyerId;
+        const reviewId: string = req.params.reviewId;
+        const userId: string = (req.user as User).user_id;
 
         await prisma.review.delete({
             where:{
                 review_id: reviewId,
-                buyerId: buyerId,
+                buyerId: userId,
             }
         })
 
-        return res.status(200).json({ message: "삭제 성공" })
+        return res.status(200).json({ code: "success", message: "" })
 
     } catch (error) {
         Logger.error(error);
     }
 }
+
+//리뷰수정

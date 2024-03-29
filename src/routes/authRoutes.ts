@@ -3,6 +3,7 @@ import { login, logout, register, auth, renew } from '../controller/authControll
 import { body, validationResult } from 'express-validator';
 import passport from '../middleware/passport';
 import { NextFunction, Request, Response } from 'express';
+import { validatorErrorChecker } from '../middleware/validator';
 
 const requireAuth = passport.authenticate("jwt", { session: false });
 const requireSignIn = passport.authenticate("local", { session: false });
@@ -22,6 +23,7 @@ authRoutes.post('/register',
       }
       return true;
     }),
+    validatorErrorChecker
   ],
   register);
 
@@ -29,19 +31,19 @@ authRoutes.post('/register',
   [
     body("email").trim().notEmpty().isEmail().withMessage('이메일은 형식이 아닙니다.'),
     body("password").trim().notEmpty().withMessage('비밀번호는 비워둘 수 없습니다.'),
+    validatorErrorChecker
   ],
-  (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-    next();
-  },
   requireSignIn,
   login
 );
 
-authRoutes.post('/renew', renew);
+authRoutes.post('/renew',
+[
+  body("userId").trim().notEmpty().isUUID(4).withMessage('uuid 형식이 아닙니다.'),
+  validatorErrorChecker
+],
+requireAuth, renew);
+
 authRoutes.post('/logout', requireAuth, logout);
 
 authRoutes.post('/test', requireAuth, auth);

@@ -2,6 +2,7 @@ import { Prisma, PrismaClient, Status } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import Logger from '../logger/logger';
 import { PaginationResult, createProduct, pagination, updateProduct } from '../intrefaces/product';
+import { User } from '../intrefaces/user';
 
 const prisma = new PrismaClient();
 
@@ -24,15 +25,14 @@ async function isLeafCategory(categoryId: string) {
     });
     
     return childrenCount === 0;
-  }
+}
 
-  
 //상품 등록
 export const savePrdct = async (req: Request, res: Response) => {
     try {
         const productData: createProduct = req.body;
-        const userId: string = req.params.id;
-
+        const userId: string = (req.user as User).user_id;
+        
         const isLeaf = await isLeafCategory(productData.categoryId);
         if (!isLeaf) {
             return res.status(400).json({ message: "선택한 카테고리는 최하위 카테고리가 아닙니다." });
@@ -61,7 +61,7 @@ export const savePrdct = async (req: Request, res: Response) => {
             }
         });
 
-        return res.status(200).json({ message: "등록 성공" })
+        return res.status(200).json({ code: "success", message: "" })
 
     } catch (error) {
         Logger.error(error);
@@ -81,6 +81,7 @@ export const findPrdct = async (req: Request, res: Response) => {
                 title: true,
                 description: true,
                 registration_date: true,
+                category_id: true,
                 end_date: true,
                 start_price: true,
                 reserve_price: true,
@@ -103,8 +104,12 @@ export const findPrdct = async (req: Request, res: Response) => {
 
         if (product) {        
             return res.status(200).json({
-                ...product,
-                likeCount,
+                code: "success",
+                message: "",
+                data: {
+                    ...product,
+                    likeCount,
+                }
             });
         }
 
@@ -180,16 +185,15 @@ const fetchProducts = async (page: number, limit: number, sort: string, status?:
 export const myPrdct = async (req: Request, res: Response) => {
     try {
         const myPrdct: pagination = {
-            userId: req.params.id as string,
+            userId: (req.user as User).user_id,
             page: parseInt(req.query.page as string, 10) || 1,
             limit: parseInt(req.query.limit as string, 10) || 15,
             status: req.query.status as string,
             sort: (req.query.sort as string) || 'latest',
         };
-
         const result = await fetchProducts(myPrdct.page, myPrdct.limit, myPrdct.sort, myPrdct.status, myPrdct.userId);
 
-        return res.send({ data: result });
+        return res.status(200).json({ code:"success", message: "", data: result });
     } catch (error) {
         Logger.error(error);
     }
@@ -208,20 +212,31 @@ export const mainPrdct = async (req: Request, res: Response) => {
 
         const result = await fetchProducts(queryParams.page, queryParams.limit, queryParams.sort, queryParams.status, undefined, queryParams.searchName);
 
-        return res.send({ data: result });
+        return res.status(200).json({ code:"success", message: "", data: result });
     } catch (error) {
         Logger.error(error);
     }
 }
 
-//수정
+//수정 -여기서부터 수정함.
 export const updatePrdct = async (req: Request, res: Response) => {
     try {
         const productId: string = req.params.id;
         const productData: updateProduct = req.body;
+        const userId: string = (req.user as User).user_id;
+
+        const product = await prisma.product.findUnique({
+            where: {
+                product_id: productId,
+            },
+        });
+
+        if (!product || product.seller_id !== userId) {
+            return res.status(403).json({ code:"fail", message: "수정 권한이 없습니다." });
+        }
 
         if (productData.startPrice < productData.reservePrice) {
-            res.send({ message: "시작가가 경매가 보다 낮으면 안됩니다." });
+            res.json({ code:"fail", message: "시작가가 경매가 보다 낮으면 안됩니다." });
             return;
         }
 
@@ -261,7 +276,7 @@ export const updatePrdct = async (req: Request, res: Response) => {
             })
         }
 
-        return res.json({ message: "success" })
+        return res.status(200).json({ code: "success", message: "" })
 
     } catch (error) {
         Logger.error(error)
@@ -272,6 +287,17 @@ export const updatePrdct = async (req: Request, res: Response) => {
 export const deletePrcdt = async (req: Request, res: Response) => {
     try {
         const productId: string = req.params.id;
+        const userId: string = (req.user as User).user_id;
+
+        const product = await prisma.product.findUnique({
+            where: {
+                product_id: productId,
+            },
+        });
+
+        if (!product || product.seller_id !== userId) {
+            return res.status(403).json({ code:"fail", message: "삭제 권한이 없습니다." });
+        }
 
         await prisma.product.deleteMany({
             where: {
@@ -279,7 +305,7 @@ export const deletePrcdt = async (req: Request, res: Response) => {
             },
         });
 
-        res.json({ message: "success " });
+        res.status(200).json({ code: "success ", message:"" });
 
     } catch (error) {
         Logger.error(error)
@@ -289,8 +315,8 @@ export const deletePrcdt = async (req: Request, res: Response) => {
 //좋아요
 export const addLikeToProduct = async (req: Request, res: Response) => {
     try {
-        const userId: string = req.params.id;
-        const productId: string = req.body.id;
+        const userId: string = (req.user as User).user_id;
+        const productId: string = req.params.id;
 
         await prisma.product_liked.create({
             data:{
@@ -299,7 +325,7 @@ export const addLikeToProduct = async (req: Request, res: Response) => {
             },
         });
 
-        res.json({ message: "성공" })
+        res.status(200).json({ code: "success ", message:"" });
     } catch (error) {
         Logger.error(error);
     }
@@ -308,16 +334,20 @@ export const addLikeToProduct = async (req: Request, res: Response) => {
 //좋아요 취소
 export const removeLikeFromProduct = async (req: Request, res: Response) => {
     try {
-        const likeId: string = req.params.id;
+        const userId: string = (req.user as User).user_id;
+        const productId: string = req.params.id;
 
-        await prisma.product_liked.delete({
+        await prisma.product_liked.deleteMany({
             where: {
-                id: likeId,
+                user_id: userId,
+                product_id: productId,
             },
         });
 
-        res.json({ message: "성공" })
+        res.status(200).json({ code: "success ", message:"" });
     } catch (error) {
         Logger.error(error);
     }
 };
+
+//상태변경시 채팅연결.

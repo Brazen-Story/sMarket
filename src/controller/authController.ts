@@ -51,12 +51,6 @@ const IssuanceRefreshToken = (user: JwtUserInfo) => {
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            res.status(422).json({ errors: errors.array() });
-        }
-
         const Register: Register = req.body.user;
 
         await checkUserUniqueness(Register.email, Register.phoneNumber);
@@ -70,10 +64,16 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 password: hashedPassword,
                 phone_number: Register.phoneNumber,
                 address: Register.address,
+                images: {
+                    create: [{
+                        profile_image: null, // 옵셔널 필드가 아니라면 이 필드를 생략
+                        background_image: null, // 옵셔널 필드가 아니라면 이 필드를 생략
+                    }],
+                }
             }
         });
 
-        res.json({ status: 'success', message: '사용자 등록이 완료되었습니다.' })
+        res.status(200).json({ code: "success", message: "" });
 
     } catch (error) {
         Logger.error(error)
@@ -82,6 +82,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
+
         const user = await prisma.user.findUnique({
             where: {
                 email: req.body.email,
@@ -95,16 +96,26 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             }
         })
 
-        if(user){
-            const { user_id, email, ...userData } = user;
-            const { address, name, phone_number, ...userInfo} = user; 
-
-            res.send({
-                access_Token: IssuanceAccessToken(userInfo),
-                refresh_Token: IssuanceRefreshToken(userInfo),
-                userData,
+        if (user) {
+            const { email, ...userData } = user;
+            const { address, name, phone_number, ...userInfo } = user;
+        
+            const access_Token = IssuanceAccessToken(userInfo);
+            const refresh_Token = IssuanceRefreshToken(userInfo);
+        
+            const responseData = {
+                ...userData,
+                access_Token,
+                refresh_Token,
+            };
+        
+            res.status(200).json({
+                code: "success",
+                message: "",
+                userData: responseData,
             });
         }
+        
 
     } catch (error) {
         Logger.error(error);
@@ -114,20 +125,23 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 export const renew = async (req: Request, res: Response) => {
     try {
         const refreshToken = req.cookies.refreshToken;
-        const data = jwt.verify(refreshToken, config.jwt.refreshKey) as User;
 
         const user = await prisma.user.findUnique({
             where: {
-                email: data.email
+                user_id: req.body.userId,
             },
         });
 
-        const valuser_idity = redisCli.get(refreshToken);
+        const valuser_idity = await redisCli.get(refreshToken);
 
-        if (user && !valuser_idity) {
-            res.send({
-                access_Token: IssuanceAccessToken(user),
-                status: 'success'
+        if (user && valuser_idity === null) {
+            const { address, name, phone_number, ...userInfo } = user;
+            const userData = IssuanceAccessToken(userInfo);
+
+            res.status(200).json({
+                code: 'success',
+                message: "",
+                userData
             })
         }
 
@@ -145,10 +159,14 @@ export const logout = async (req: Request, res: Response) => {
         if (data) {
             const expTime = data.exp - Math.floor(Date.now() / 1000); // 만료 시간 계산
             await redisCli.setEx(refreshToken, expTime, 'blacklisted'); // Redis에 토큰 저장
-            console.log('리프레시 토큰이 블랙리스트에 추가됨');
         }
 
-        res.clearCookie('refreshToken').send('로그아웃 완료');
+        res.clearCookie('refreshToken')
+            .clearCookie('accessToken')
+            .json({
+                code: 'success',
+                message: ""
+            });
 
     } catch (error) {
         console.error(error);
