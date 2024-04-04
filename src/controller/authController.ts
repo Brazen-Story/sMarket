@@ -125,10 +125,11 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 export const renew = async (req: Request, res: Response) => {
     try {
         const refreshToken = req.cookies.refreshToken;
+        const userId: string = (req.user as User).user_id;
 
         const user = await prisma.user.findUnique({
             where: {
-                user_id: req.body.userId,
+                user_id: userId,
             },
         });
 
@@ -149,7 +150,6 @@ export const renew = async (req: Request, res: Response) => {
         console.log(error)
     }
 }
-
 
 export const logout = async (req: Request, res: Response) => {
     try {
@@ -175,7 +175,7 @@ export const logout = async (req: Request, res: Response) => {
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        res.json({ result: true });
+        res.json({ code: "success", message: "" });
     } catch (error) {
         console.error(error);
         next(error);

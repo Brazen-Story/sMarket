@@ -218,7 +218,7 @@ export const mainPrdct = async (req: Request, res: Response) => {
     }
 }
 
-//수정 -여기서부터 수정함.
+//수정
 export const updatePrdct = async (req: Request, res: Response) => {
     try {
         const productId: string = req.params.id;
@@ -257,7 +257,7 @@ export const updatePrdct = async (req: Request, res: Response) => {
                 data: {
                     title: productData.title,
                     description: productData.description,
-                    end_date: productData.endDate,
+                    end_date: parseDate(productData.endDate),
                     start_price: productData.startPrice,
                     status: productData.status,
                     images: {
@@ -350,4 +350,33 @@ export const removeLikeFromProduct = async (req: Request, res: Response) => {
     }
 };
 
-//상태변경시 채팅연결.
+//상태변경
+export const statusChange = async (req: Request, res:Response) => {
+    try{
+        const userId: string = (req.user as User).user_id;
+        const productId: string = req.params.id;
+        const status: Status = req.body.status;
+
+        const product = await prisma.product.findUnique({
+            where: {
+                product_id: productId,
+            },
+        });
+
+        if (!product || product.seller_id !== userId) {
+            return res.status(403).json({ code:"fail", message: "수정 권한이 없습니다." });
+        }
+
+        await prisma.product.update({
+            where: {
+                product_id: productId,
+            },
+            data: {
+                status: status,
+            }
+        })
+
+    } catch(error) {
+        Logger.error(error)
+    }
+}

@@ -37,13 +37,7 @@ authRoutes.post('/register',
   login
 );
 
-authRoutes.post('/renew',
-[
-  body("userId").trim().notEmpty().isUUID(4).withMessage('uuid 형식이 아닙니다.'),
-  validatorErrorChecker
-],
-requireAuth, renew);
-
+authRoutes.post('/renew', requireAuth, renew);
 authRoutes.post('/logout', requireAuth, logout);
 
 authRoutes.post('/test', requireAuth, auth);

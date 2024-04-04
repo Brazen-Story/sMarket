@@ -77,3 +77,35 @@ export const deleteReview = async (req: Request, res: Response) => {
 }
 
 //리뷰수정
+export const patchReview = async (req: Request, res: Response) => {
+    try{
+        const reviewId = req.params.id;
+        const userId = (req.user as User).user_id;
+        const coment = req.body.coment;
+
+        const review = await prisma.review.findUnique({
+            where: {
+                review_id: reviewId,
+            }
+        })
+
+        
+        if (!review || review.buyerId !== userId) {
+            return res.status(403).json({ code:"fail", message: "수정 권한이 없습니다." });
+        }
+
+        await prisma.review.update({
+            where: {
+                review_id: reviewId,
+            },
+            data: {
+                coment,
+            }
+        })
+
+        res.status(200).json({ code: "sccuess", message: "" })
+
+    }catch(error){
+        Logger.error(error);
+    }
+}

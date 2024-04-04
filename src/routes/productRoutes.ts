@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import passport from '../middleware/passport';
-import { deletePrcdt, findPrdct, myPrdct, savePrdct, mainPrdct, updatePrdct, addLikeToProduct, removeLikeFromProduct } from '../controller/productController';
+import { deletePrcdt, findPrdct, myPrdct, savePrdct, mainPrdct, updatePrdct, addLikeToProduct, removeLikeFromProduct, statusChange } from '../controller/productController';
 import { body } from 'express-validator';
 import { validatorErrorChecker } from '../middleware/validator';
 
@@ -43,3 +43,11 @@ productRoutes.patch('/seller-product/:id',
 productRoutes.delete('/seller-product/:id', requireAuth, deletePrcdt);
 productRoutes.post('/liked-product/:id', requireAuth, addLikeToProduct);
 productRoutes.delete('/liked-product/:id', requireAuth, removeLikeFromProduct);
+productRoutes.patch('/seller-product/',
+    [
+        body('status').notEmpty().withMessage('상태를 지정해주세요.'),
+        validatorErrorChecker
+    ],
+    requireAuth,
+    statusChange
+);
