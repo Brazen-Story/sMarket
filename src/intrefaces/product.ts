@@ -59,3 +59,9 @@ interface ImageData {
 }
 
 type ProductStatus = "auctionProgress" | "auctionCompleted" | "all";
+
+export interface ProductWithBids {
+    product_id: string;
+    seller_id: string;
+    bid: { user_id: string }[];
+}

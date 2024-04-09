@@ -6,7 +6,7 @@ import { User } from '../intrefaces/user';
 
 const prisma = new PrismaClient();
 
-const parseDate = (dateStr: string) => {
+export const parseDate = (dateStr: string) => {
     const year = dateStr.substring(0, 4);
     const month = dateStr.substring(4, 6);
     const day = dateStr.substring(6, 8);
@@ -14,7 +14,7 @@ const parseDate = (dateStr: string) => {
     const minute = dateStr.substring(10, 12);
     const second = dateStr.substring(12, 14);
 
-    return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
 }
 
 async function isLeafCategory(categoryId: string) {
@@ -27,7 +27,7 @@ async function isLeafCategory(categoryId: string) {
     return childrenCount === 0;
 }
 
-//상품 등록
+//상품 등록 수정필요
 export const savePrdct = async (req: Request, res: Response) => {
     try {
         const productData: createProduct = req.body;
@@ -374,9 +374,22 @@ export const statusChange = async (req: Request, res:Response) => {
             data: {
                 status: status,
             }
-        })
+        });
+
+        res.status(200).json({ code: "success ", message:"" });
+
 
     } catch(error) {
         Logger.error(error)
+    }
+}
+
+//만약 시간이 끝났다. 그럼 입찰자가 있는지 확인해보고. 채팅 통신.
+export const chatConnect = async (req: Request, res: Response) => {
+    try{
+        
+
+    } catch(error) {
+        
     }
 }

@@ -13,9 +13,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-generator erd {
-  provider = "prisma-erd-generator"
-}
+// generator erd {
+//   provider = "prisma-erd-generator"
+// }
 
 model User {
   user_id       String          @id @default(uuid())
@@ -58,7 +58,7 @@ model Product {
   title             String
   description       String
   registration_date DateTime        @default(now())
-  end_date          DateTime
+  end_date          String        
   start_price       Int
   reserve_price     Int?
   hammer_price      Int?
@@ -98,14 +98,14 @@ model Review {
   reviewTime  DateTime  @default(now())
 }
 
-//입찰내역?
+//입찰내역
 model Bid {
   bid_id     String   @id @default(uuid())
   user       User     @relation(fields: [user_id], references: [user_id])
   user_id    String
   product    Product  @relation(fields: [product_id], references: [product_id])
   product_id String
-  bidPrice   Int
+  bidPrice   Int //입찰가격
   bidTime    DateTime @default(now())
 }
 

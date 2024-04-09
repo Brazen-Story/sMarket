@@ -10,6 +10,7 @@ import { userRoutes } from "./routes/userRoutes";
 import { productRoutes } from "./routes/productRoutes";
 import { categoryRoutes } from "./routes/categoryRoutes";
 import { revievwRoutes } from "./routes/reviewRoutes";
+import { scheduleCronJobs } from "./middleware/transactionChat";
 
 const app: Express = express();
 
@@ -31,8 +32,11 @@ app.use('/product', productRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/product-review', revievwRoutes);
 
+scheduleCronJobs();
+
 const server = http.createServer(app);
 
 server.listen(config.port, () => {
   logger.info(`[server]: Server is running at http://localhost:${config.port}`);
 });
+
