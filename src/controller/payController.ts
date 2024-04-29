@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import Logger from '../logger/logger';
 import { buyer } from '../intrefaces/pay';
 
-const prisma = new PrismaClient();
+import prisma from '../client';
 
 //가격 변동(판매 중), pay로 별도 구분
 export const priceRise =  async (req: Request, res: Response, next: NextFunction) => {

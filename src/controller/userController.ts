@@ -1,13 +1,11 @@
 import Logger from "../logger/logger"
 import { Request, Response } from 'express';
-import config from "../config";
-import { PrismaClient, User } from "@prisma/client";
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import { User } from "@prisma/client";
 import * as bcrypt from 'bcrypt';
 import { UserUpdate } from "../intrefaces/user";
 import { likePage } from "../intrefaces/product";
 
-const prisma = new PrismaClient();
+import prisma from '../client';
 
 export const userByEmail = async (email: string) => {
     await prisma.user.findUnique({

@@ -1,14 +1,13 @@
-import { PrismaClient } from '@prisma/client';
 import cron from 'node-cron';
 import { ProductWithBids } from '../intrefaces/product';
 import moment from 'moment-timezone';
 import 'moment-timezone';
+import prisma from '../client';
+import { app } from '..';
 
 moment.tz.setDefault("Asia/Seoul");
 
-const prisma = new PrismaClient();
-
-const checkDatabase = async () => { //제일큰 입찰가격
+const checkDatabase = async () => {
   const product: ProductWithBids[] = await prisma.product.findMany({
     where: {
       end_date: moment().format('YYYY-MM-DD HH:mm:00'),
@@ -19,30 +18,49 @@ const checkDatabase = async () => { //제일큰 입찰가격
       bid: {
         select: {
           user_id: true,
-        }
-      }
+          bidPrice: true,
+        },
+        orderBy: {
+          bidPrice: 'desc',
+        },
+      },
     }
   });
 
-  const bid = await prisma.bid.findMany({
-    where:{
+  const highestBids = product.map(product => {
+    const highestBid = product.bid[0] ? {
+      user_id: product.bid[0].user_id,
+      bidPrice: product.bid[0].bidPrice
+    } : null;
+    return {
+      product_id: product.product_id,
+      seller_id: product.seller_id,
+      highestBid: highestBid
+    };
+  });
 
-    }
-  })
-
-  if (product.length > 0) {
-    return product;
-  } else {
-    return null;
-  }
+  return highestBids;
 }
 
 export const scheduleCronJobs = () => {
-  const data = checkDatabase();
   cron.schedule('* * * * *', async () => {
-    if(null !== data){
-      
+    const data = await checkDatabase(); 
+
+    if (data && data.length > 0) {
+      await Promise.all(data.map(async ({ product_id, seller_id, highestBid }) => { 
+        if (highestBid) {
+          const newRoom = await prisma.chat_room.create({ 
+            data: {
+              product_id: product_id,
+              seller_id: seller_id,
+              buyer_id: highestBid.user_id,
+            }
+          });
+
+          const io = app.get('io');
+          io.of('/room').emit('newRoom', newRoom);
+        }
+      }));
     }
-    console.log(moment().format('YYYY-MM-DD HH:mm:ss'));
   });
-}
+};

@@ -1,10 +1,10 @@
-import { Prisma, PrismaClient, Status } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import Logger from '../logger/logger';
 import { PaginationResult, createProduct, pagination, updateProduct } from '../intrefaces/product';
 import { User } from '../intrefaces/user';
 
-const prisma = new PrismaClient();
+import prisma from '../client';
 
 export const parseDate = (dateStr: string) => {
     const year = dateStr.substring(0, 4);

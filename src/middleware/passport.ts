@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 import config from '../config';
 import { JwtPayload } from '../intrefaces/user';
 import Logger from '../logger/logger';
-const prisma = new PrismaClient();
+import prisma from '../client';
 
 const localOptions = { usernameField: 'email', passwordField: 'password' };
 const passportVerify = new LocalStrategy(

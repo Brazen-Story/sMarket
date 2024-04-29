@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
 import Logger from "../logger/logger";
-import { createReview } from "../intrefaces/review";
-import { PrismaClient, User } from "@prisma/client";
+import { User } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import prisma from '../client';
 
 //등록
 export const saveReview = async (req: Request, res: Response) => {

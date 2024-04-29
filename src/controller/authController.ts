@@ -1,16 +1,15 @@
-import { PrismaClient, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import HttpException from '../models/http-exception.model';
 import { JwtPayload, JwtUserInfo, Login, Register } from '../intrefaces/user';
 import brcypt from 'bcryptjs';
-import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import config from '../config';
 import { redisCli } from '../config/redis/redis';
 import Logger from '../logger/logger';
 import { userByEmail, userByphoneNumber } from './userController';
 
-const prisma = new PrismaClient();
+import prisma from '../client';
 
 const checkUserUniqueness = async (email: string, phonedNumber: number) => {
     const existingUserByEmail = await userByEmail(email);
