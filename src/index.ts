@@ -14,6 +14,7 @@ import { scheduleCronJobs } from "./middleware/transactionChat";
 import { Server } from "socket.io";
 import { chatRoutes } from "./routes/chatRoutes";
 import { WebSocket } from "./sockets/socket";
+import { payRoutes } from "./routes/payRoutes";
 // import { chatConnect } from "./sockets/socket";
 
 
@@ -39,6 +40,7 @@ app.use('/product', productRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/product-review', revievwRoutes);
 app.use('/chat', chatRoutes);
+app.use('/pay', payRoutes);
 
 server.listen(config.port, () => {
   logger.info(`[server]: Server is running at http://localhost:${config.port}`);

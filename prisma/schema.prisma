@@ -32,7 +32,8 @@ model User {
   bid            Bid[]
   likedProducts  Product_liked[]
   chatRoomSeller Chat_room[]     @relation("seller")
-  chatMessage    Chat_message[]
+  chatRoomBuyer Chat_room[]     @relation("buyer")
+  chatMessage Chat_message[]
 }
 
 model User_image {
@@ -103,14 +104,13 @@ model Review {
 
 //입찰내역
 model Bid {
-  bid_id     String   @id @default(uuid())
-  user       User     @relation(fields: [user_id], references: [user_id])
+  bid_id     String      @id @default(uuid())
+  user       User        @relation(fields: [user_id], references: [user_id])
   user_id    String
-  product    Product  @relation(fields: [product_id], references: [product_id])
+  product    Product     @relation(fields: [product_id], references: [product_id])
   product_id String
   bidPrice   Int //입찰가격
-  bidTime    DateTime @default(now())
-  chatRoom Chat_room[]
+  bidTime    DateTime    @default(now())
 }
 
 model Chat_room {
@@ -119,7 +119,7 @@ model Chat_room {
   seller_id    String
   product_id   String
   chatTime     DateTime       @default(now())
-  bid          Bid            @relation(fields: [buyer_id], references: [bid_id])
+  buyer        User           @relation("buyer", fields: [buyer_id], references: [user_id])
   product      Product        @relation(fields: [product_id], references: [product_id])
   seller       User           @relation("seller", fields: [seller_id], references: [user_id])
   chatMessages Chat_message[]

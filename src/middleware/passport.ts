@@ -13,6 +13,7 @@ const passportVerify = new LocalStrategy(
     localOptions,
     async (email: string, password: string, done: any) => {
         try {
+
             const user = await prisma.user.findUnique({
                 where: {
                     email,
@@ -51,7 +52,7 @@ const JWTVerify = new JWTStrategy(jwtOptions, async (jwtPayload: JwtPayload, don
         if (!user) {
             done(null, false, { reason: 'ACCESS_TOKEN이 만료되었습니다.' });
         }
-
+        console.log(jwtPayload.exp)
         done(null, user);
         return;
         

@@ -65,8 +65,8 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 address: Register.address,
                 images: {
                     create: [{
-                        profile_image: null, // 옵셔널 필드가 아니라면 이 필드를 생략
-                        background_image: null, // 옵셔널 필드가 아니라면 이 필드를 생략
+                        profile_image: null,
+                        background_image: null,
                     }],
                 }
             }

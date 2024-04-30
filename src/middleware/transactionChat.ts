@@ -4,13 +4,12 @@ import moment from 'moment-timezone';
 import 'moment-timezone';
 import prisma from '../client';
 import { app } from '..';
+import Logger from '../logger/logger';
 
-moment.tz.setDefault("Asia/Seoul");
-
-const checkDatabase = async () => {
+const checkDatabase = async (currentTime: string) => {
   const product: ProductWithBids[] = await prisma.product.findMany({
     where: {
-      end_date: moment().format('YYYY-MM-DD HH:mm:00'),
+      end_date: currentTime,
     },
     select: {
       product_id: true,
@@ -44,23 +43,26 @@ const checkDatabase = async () => {
 
 export const scheduleCronJobs = () => {
   cron.schedule('* * * * *', async () => {
-    const data = await checkDatabase(); 
-
-    if (data && data.length > 0) {
-      await Promise.all(data.map(async ({ product_id, seller_id, highestBid }) => { 
-        if (highestBid) {
-          const newRoom = await prisma.chat_room.create({ 
-            data: {
-              product_id: product_id,
-              seller_id: seller_id,
-              buyer_id: highestBid.user_id,
-            }
-          });
-
-          const io = app.get('io');
-          io.of('/room').emit('newRoom', newRoom);
-        }
-      }));
+    try {
+      const currentTime = moment().format('YYYY-MM-DD HH:mm');
+      const data = await checkDatabase(currentTime);
+      if (data && data.length > 0) {
+        await Promise.all(data.map(async ({ product_id, seller_id, highestBid }) => {
+          if (highestBid) {
+            const newRoom = await prisma.chat_room.create({
+              data: {
+                product_id: product_id, 
+                seller_id: seller_id, 
+                buyer_id: highestBid.user_id, 
+              }
+            });
+            const io = app.get('io');
+            io.of('/room').emit('newRoom', newRoom);
+          }
+        }));
+      }
+    } catch (error) {
+      Logger.error(error);
     }
   });
 };

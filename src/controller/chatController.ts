@@ -39,16 +39,12 @@ export const renderMain = async (req: Request, res: Response) => {
                         }
                     }
                 },
-                bid: {
+                buyer: {
                     select: {
-                        user: {
+                        name: true,
+                        images: {
                             select: {
-                                name: true,
-                                images: {
-                                    select: {
-                                        profile_image: true,
-                                    }
-                                }
+                                profile_image: true
                             }
                         }
                     }
@@ -57,34 +53,6 @@ export const renderMain = async (req: Request, res: Response) => {
         });
 
         res.status(200).json({ code: 'success', message: " ", data });
-
-    } catch (error) {
-        Logger.error(error);
-    }
-}
-
-export const renderRoom = async (req: Request, res: Response) => {
-    //방 렌더링?
-}
-
-export const createRoom = async (req: Request, res: Response) => {
-
-    const roomData: roomData = req.body;
-    const userId: string = (req.user as User).user_id;
-
-    try {
-        const newRoom = await prisma.chat_room.create({
-            data: {
-                product_id: roomData.productId,
-                seller_id: roomData.sellerId,
-                buyer_id: userId
-            }
-        })
-
-        const io = req.app.get('io');
-        io.of('/room').emit('newRoom', newRoom);
-
-        res.status(200).json({ code: 'success', message: " " });
 
     } catch (error) {
         Logger.error(error);
@@ -120,16 +88,12 @@ export const enterRoom = async (req: Request, res: Response) => {
                         }
                     }
                 },
-                bid: {
+                buyer: {
                     select: {
-                        user: {
+                        name: true,
+                        images: {
                             select: {
-                                name: true,
-                                images: {
-                                    select: {
-                                        profile_image: true,
-                                    }
-                                }
+                                profile_image: true
                             }
                         }
                     }
@@ -163,27 +127,10 @@ export const enterRoom = async (req: Request, res: Response) => {
     }
 }
 
-export const removeRoom = async (req: Request, res: Response) => {
-    const roomId: string = req.params.id;
-
-    try {
-        await prisma.chat_room.deleteMany({
-            where: {
-                chat_id: roomId,
-            }
-        })
-
-        res.status(200).json({ code: 'success', message: " " });
-
-    } catch (error) {
-        Logger.error(error);
-    }
-}
-
 export const sendChat = async (req: Request, res: Response) => {
 
     const messageData: messageData = {
-        roomId: req.params.roomId,
+        roomId: req.params.id,
         userId: (req.user as User).user_id,
         content: req.body.content
     };
@@ -203,5 +150,22 @@ export const sendChat = async (req: Request, res: Response) => {
     } catch (error) {
         Logger.error(error);
     }
-
 }
+
+export const removeRoom = async (req: Request, res: Response) => {
+    const roomId: string = req.params.id;
+
+    try {
+        await prisma.chat_room.deleteMany({
+            where: {
+                chat_id: roomId,
+            }
+        })
+
+        res.status(200).json({ code: 'success', message: " " });
+
+    } catch (error) {
+        Logger.error(error);
+    }
+}
+

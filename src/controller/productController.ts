@@ -12,9 +12,8 @@ export const parseDate = (dateStr: string) => {
     const day = dateStr.substring(6, 8);
     const hour = dateStr.substring(8, 10);
     const minute = dateStr.substring(10, 12);
-    const second = dateStr.substring(12, 14);
 
-    return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+    return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
 async function isLeafCategory(categoryId: string) {
@@ -27,7 +26,7 @@ async function isLeafCategory(categoryId: string) {
     return childrenCount === 0;
 }
 
-//상품 등록 수정필요
+//상품 등록
 export const savePrdct = async (req: Request, res: Response) => {
     try {
         const productData: createProduct = req.body;
