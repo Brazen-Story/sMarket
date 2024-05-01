@@ -11,12 +11,8 @@ import { productRoutes } from "./routes/productRoutes";
 import { categoryRoutes } from "./routes/categoryRoutes";
 import { revievwRoutes } from "./routes/reviewRoutes";
 import { scheduleCronJobs } from "./middleware/transactionChat";
-import { Server } from "socket.io";
 import { chatRoutes } from "./routes/chatRoutes";
 import { WebSocket } from "./sockets/socket";
-import { payRoutes } from "./routes/payRoutes";
-// import { chatConnect } from "./sockets/socket";
-
 
 export const app: Express = express();
 const server = http.createServer(app); 
@@ -40,7 +36,6 @@ app.use('/product', productRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/product-review', revievwRoutes);
 app.use('/chat', chatRoutes);
-app.use('/pay', payRoutes);
 
 server.listen(config.port, () => {
   logger.info(`[server]: Server is running at http://localhost:${config.port}`);

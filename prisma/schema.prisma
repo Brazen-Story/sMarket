@@ -32,8 +32,8 @@ model User {
   bid            Bid[]
   likedProducts  Product_liked[]
   chatRoomSeller Chat_room[]     @relation("seller")
-  chatRoomBuyer Chat_room[]     @relation("buyer")
-  chatMessage Chat_message[]
+  chatRoomBuyer  Chat_room[]     @relation("buyer")
+  chatMessage    Chat_message[]
 }
 
 model User_image {
@@ -104,13 +104,13 @@ model Review {
 
 //입찰내역
 model Bid {
-  bid_id     String      @id @default(uuid())
-  user       User        @relation(fields: [user_id], references: [user_id])
+  bid_id     String   @id @default(uuid())
+  user       User     @relation(fields: [user_id], references: [user_id])
   user_id    String
-  product    Product     @relation(fields: [product_id], references: [product_id])
+  product    Product  @relation(fields: [product_id], references: [product_id])
   product_id String
-  bidPrice   Int //입찰가격
-  bidTime    DateTime    @default(now())
+  bidPrice   Int 
+  bidTime    DateTime @default(now())
 }
 
 model Chat_room {
@@ -130,10 +130,12 @@ model Chat_message {
   user       User      @relation(fields: [user_id], references: [user_id])
   user_id    String
   chat_id    String
-  chat       Chat_room @relation(fields: [chat_id], references: [chat_id])
+  chat       Chat_room @relation(fields: [chat_id], references: [chat_id], onDelete: Cascade) 
   content    String
   sendTime   DateTime  @default(now())
 }
+
+
 
 enum Status {
   all

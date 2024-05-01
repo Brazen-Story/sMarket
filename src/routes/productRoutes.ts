@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import passport from '../middleware/passport';
-import { deletePrcdt, findPrdct, myPrdct, savePrdct, mainPrdct, updatePrdct, addLikeToProduct, removeLikeFromProduct, statusChange } from '../controller/productController';
+import { deletePrcdt, findPrdct, myPrdct, savePrdct, mainPrdct, updatePrdct, addLikeToProduct, removeLikeFromProduct, statusChange, priceRise } from '../controller/productController';
 import { body } from 'express-validator';
 import { validatorErrorChecker } from '../middleware/validator';
 
@@ -50,4 +50,13 @@ productRoutes.patch('/seller-product/',
     ],
     requireAuth,
     statusChange
+);
+
+productRoutes.post('/pay-product/:id',
+    [
+        body('price').notEmpty().withMessage('입찰가를 지정해주세요.'),
+        validatorErrorChecker
+    ],
+    requireAuth,
+    priceRise
 );

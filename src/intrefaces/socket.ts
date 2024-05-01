@@ -8,5 +8,5 @@ export interface roomData {
 export interface messageData {
     roomId: string;
     userId: string;
-    content: string;
+    message: string;
 }

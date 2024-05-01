@@ -56,8 +56,7 @@ export const scheduleCronJobs = () => {
                 buyer_id: highestBid.user_id, 
               }
             });
-            const io = app.get('io');
-            io.of('/room').emit('newRoom', newRoom);
+            app.get('io').of('/room').emit('newRoom', newRoom);
           }
         }));
       }
