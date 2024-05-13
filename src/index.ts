@@ -1,19 +1,13 @@
 import express, { Express } from "express";
 import cors from 'cors';
 import config from './config';
-import { authRoutes } from "./routes/authRoutes";
 import http from 'http';
 import cookieParser from 'cookie-parser';
 import morganMiddleware from "./middleware/morgan";
 import logger from './logger/logger';
-import { userRoutes } from "./routes/userRoutes";
-import { productRoutes } from "./routes/productRoutes";
-import { categoryRoutes } from "./routes/categoryRoutes";
-import { revievwRoutes } from "./routes/reviewRoutes";
-import { scheduleCronJobs } from "./middleware/transactionChat";
-import { chatRoutes } from "./routes/chatRoutes";
 import { WebSocket } from "./sockets/socket";
-
+import { scheduleCronJobs } from "./middleware/transactionChat";
+import { setupRoutes } from "./routes/index";
 export const app: Express = express();
 const server = http.createServer(app); 
 
@@ -30,12 +24,7 @@ app.use((req, res, next) => {
 
 app.use(morganMiddleware);
 
-app.use('/auth', authRoutes);
-app.use('/user', userRoutes);
-app.use('/product', productRoutes);
-app.use('/categories', categoryRoutes);
-app.use('/product-review', revievwRoutes);
-app.use('/chat', chatRoutes);
+setupRoutes(app);
 
 server.listen(config.port, () => {
   logger.info(`[server]: Server is running at http://localhost:${config.port}`);

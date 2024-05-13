@@ -158,8 +158,7 @@ const config = {
   //   "**/__tests__/**/*.[jt]s?(x)",
   //   "**/?(*.)+(spec|test).[tj]s?(x)"
   // ],
-  testMatch: ["**/tests/*.test.(ts|tsx)"]
-  // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
+  testMatch: ["**/src/**/*.test.(ts|tsx)"], // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
   // testPathIgnorePatterns: [
   //   "\\\\node_modules\\\\"
   // ],
@@ -195,4 +194,4 @@ const config = {
   // watchman: true,
 };
 
-module.exports = config;
+module.exports = config; // CommonJS 방식으로 모듈을 내보냅니다.

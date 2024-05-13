@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "test": "jest --setupFiles dotenv/config --forceExit --detectOpenHandles",
+    "test": "jest --config ./jest.config.js --setupFiles dotenv/config --forceExit --detectOpenHandles",
     "start": "ts-node src/index.ts",
     "build": "tsc -p .",
     "dev": "nodemon --watch \"src/**/*\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"ts-node src/index.ts\""
@@ -35,7 +35,6 @@
     "passport-local": "^1.0.0",
     "redis": "^4.6.13",
     "socket.io": "^4.7.5",
-    "supertest": "^6.3.4",
     "ts-jest": "^29.1.2",
     "winston": "^3.12.0",
     "winston-daily-rotate-file": "^5.0.0"
@@ -55,9 +54,11 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/socket.io": "^3.0.2",
+    "@types/supertest": "^6.0.2",
     "nodemon": "^3.1.0",
     "prisma": "^5.10.2",
     "prisma-erd-generator": "^1.11.2",
+    "supertest": "^7.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }

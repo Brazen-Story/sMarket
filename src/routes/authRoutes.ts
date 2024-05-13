@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { login, logout, register, auth, renew } from '../controller/authController';
 import { body, validationResult } from 'express-validator';
 import passport from '../middleware/passport';
-import { NextFunction, Request, Response } from 'express';
 import { validatorErrorChecker } from '../middleware/validator';
 
 const requireAuth = passport.authenticate("jwt", { session: false });
