@@ -55,6 +55,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/socket.io": "^3.0.2",
     "@types/supertest": "^6.0.2",
+    "jest-mock-extended": "^2.0.4",
     "nodemon": "^3.1.0",
     "prisma": "^5.10.2",
     "prisma-erd-generator": "^1.11.2",

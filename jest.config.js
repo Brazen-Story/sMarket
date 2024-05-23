@@ -125,9 +125,8 @@ const config = {
   // rootDir: undefined,
 
   // A list of paths to directories that Jest should use to search for files in
-  // roots: [
-  //   "<rootDir>"
-  // ],
+  roots: ['<rootDir>/test'],
+
 
   // Allows you to use a custom runner instead of Jest's default test runner
   // runner: "jest-runner",
@@ -137,6 +136,7 @@ const config = {
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
   // setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['<rootDir>/test/singleton.ts'],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.
   // slowTestThreshold: 5,
@@ -158,7 +158,11 @@ const config = {
   //   "**/__tests__/**/*.[jt]s?(x)",
   //   "**/?(*.)+(spec|test).[tj]s?(x)"
   // ],
-  testMatch: ["**/src/**/*.test.(ts|tsx)"], // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
+  testMatch: [
+    '<rootDir>/test/**/*.test.[jt]s?(x)',
+    '<rootDir>/test/**/*.spec.[jt]s?(x)',
+    '**/?(*.)+(spec|test).[jt]s?(x)'
+  ],
   // testPathIgnorePatterns: [
   //   "\\\\node_modules\\\\"
   // ],
@@ -174,7 +178,9 @@ const config = {
 
   // A map from regular expressions to paths to transformers
   // transform: undefined,
-
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+  },
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
   // transformIgnorePatterns: [
   //   "\\\\node_modules\\\\",
@@ -195,3 +201,9 @@ const config = {
 };
 
 module.exports = config; // CommonJS 방식으로 모듈을 내보냅니다.
+
+
+/*
+  나중에는 unit Test와 E2E Test 환경 분리를 해야한다. 
+  왜냐면 Jest Test는 병렬로 처리되기 때문에 서로 간섭을 줄 수도 있기 때문이다.
+*/

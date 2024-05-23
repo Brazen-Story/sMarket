@@ -1,15 +1,22 @@
 export interface User {
     user_id: string;
     name: string;
-    phoneNumber: number;
+    phone_number: number;
     address: string;
     email: string;
     password: string;
+    images: ImageData;
+    biography: string | null;
+}
+
+interface ImageData {
+    profileImage?: string | null;
+    backgroundImage?: string | null;
 }
 
 export interface Register {
     name: string;
-    phoneNumber: number;
+    phone_number: number;
     address: string;
     email: string;
     password: string;
@@ -34,13 +41,10 @@ export interface JwtUserInfo {
 }
 
 export interface UserUpdate {
+    user_id: string;
     name?: string;
     biography?: string;
     address?: string;
     images: ImageData;
 }
 
-interface ImageData {
-    profileImage?: string;
-    backgroundImage?: string;
-}

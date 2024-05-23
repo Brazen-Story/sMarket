@@ -13,7 +13,6 @@ import prisma from '../client';
 
 const checkUserUniqueness = async (email: string, phonedNumber: number) => {
     const existingUserByEmail = await userByEmail(email);
-
     const existingUserByphone_number = await userByphoneNumber(phonedNumber);
 
     if (!existingUserByEmail || !existingUserByphone_number) {
@@ -52,7 +51,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     try {
         const Register: Register = req.body.user;
 
-        await checkUserUniqueness(Register.email, Register.phoneNumber);
+        await checkUserUniqueness(Register.email, Register.phone_number);
 
         const hashedPassword = await brcypt.hash(Register.password, 10);
 
@@ -61,8 +60,9 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 email: Register.email,
                 name: Register.name,
                 password: hashedPassword,
-                phone_number: Register.phoneNumber,
+                phone_number: Register.phone_number,
                 address: Register.address,
+                biography: null,
                 images: {
                     create: [{
                         profile_image: null,
@@ -81,7 +81,6 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
-
         const user = await prisma.user.findUnique({
             where: {
                 email: req.body.email,
@@ -118,6 +117,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     } catch (error) {
         Logger.error(error);
+        next(error); // 다음 미들웨어에 오류 전달
+
     }
 }
 
@@ -169,14 +170,5 @@ export const logout = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error(error);
-    }
-}
-
-export const auth = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        res.json({ code: "success", message: "" });
-    } catch (error) {
-        console.error(error);
-        next(error);
     }
 }

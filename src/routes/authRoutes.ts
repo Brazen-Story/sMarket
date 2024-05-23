@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, logout, register, auth, renew } from '../controller/authController';
+import { login, logout, register, renew } from '../controller/authController';
 import { body, validationResult } from 'express-validator';
 import passport from '../middleware/passport';
 import { validatorErrorChecker } from '../middleware/validator';
@@ -38,5 +38,3 @@ authRoutes.post('/register',
 
 authRoutes.post('/renew', requireAuth, renew);
 authRoutes.post('/logout', requireAuth, logout);
-
-authRoutes.post('/test', requireAuth, auth);
